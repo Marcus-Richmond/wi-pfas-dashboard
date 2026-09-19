@@ -12,6 +12,7 @@ data/processed/
 # VS Code
 *.code-workspace
 .vscode/
+.vscode
 
 # Python
 __pycache__/

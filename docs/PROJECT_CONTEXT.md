@@ -1,35 +1,26 @@
 # Project context
 
-Reviewed 2026-09-13 against commit `d6cba739edd4239acc08361fe18adc1a231a7b54` and the accessible chats inventoried in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). This is a dated snapshot, not an assertion about future repository state.
+Updated 2026-09-18 against local `HEAD` `f878cff` and the complete **Database Discussion** review recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). At inspection, `main` matched the locally recorded `origin/main`; no fetch was performed. The only pre-existing working-tree change was an untracked `backend/` directory, which this documentation update preserves.
 
-**Evidence labels:** Confirmed means observed in the checkout or this review's execution. Historical intention means stated by the owner in a chat. Proposed means suggested but not established as a final choice. Unresolved means available evidence does not settle it.
+**Evidence labels:** Confirmed means observed in current files or a stated local check. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review. Proposed means suggested but not accepted or implemented. Unresolved means the available evidence does not settle it. This review did not execute either notebook, run SQL, or connect to Aiven.
 
-## Purpose, audience, and learning objectives
+## Purpose and learning objectives
 
-**Historical intention:** Build a more capable and visually polished version of the Wisconsin DNR PFAS viewer, with filtering, searching, highlighting, and potentially hydrography context. The owner has environmental science, geology, GIS, and environmental consulting experience and wants to grow as a full-stack GIS developer.
+Build a more capable and visually polished Wisconsin DNR PFAS explorer, with filtering, searching, highlighting, coordinated maps/tables/charts, and potentially hydrography context. The owner brings environmental science, geology, GIS, and consulting experience and wants to develop full-stack GIS programming skills.
 
-The immediate audience is the owner and people reviewing the learning work. An eventual audience of people exploring Wisconsin environmental data is implied by the concept; specific public/professional user personas have not been agreed.
+The immediate audience is the owner and people reviewing the learning work; eventual public/professional user personas and release scope remain open. Learning objectives include reproducible environmental data cleaning, spatial database design, a backend API and interactive frontend, and professional Git, documentation, environment, and deployment practices.
 
-Learning objectives recovered from the chats:
+The owner writes application code with manageable steps, explanations, syntax help, and debugging guidance unless direct implementation is requested. In Database Discussion, the owner considered the first layer sufficiently cleaned to move on to database work. Remaining data-quality questions below do not reverse that chosen milestone.
 
-- Clean environmental sampling data reproducibly with Python and understand how it should be modeled.
-- Connect a spatial database, backend API, and interactive frontend.
-- Explore React and TypeScript without taking on too much complexity at once.
-- Learn coordinated maps, tables, charts, filters, and detail views.
-- Practice Git, portable environments, documentation, secret handling, and earlier deployment preparation.
-- Write the application code personally, using assistants for explanation, steps, syntax, and debugging unless direct edits are requested.
+The separate **Project Location Map** remains a predecessor project. Its deployed application is background experience, not evidence of a running PFAS dashboard.
 
-The separate **Project Location Map** was a predecessor learning exercise. Its PostgreSQL/Django/JavaScript application and reported Render deployment are background experience, not capabilities of this repository.
+## Current implementation and repository layout
 
-## Current capabilities and architecture
-
-**Confirmed:** The repository contains an exploratory data-cleaning workflow, not a running dashboard. There is no frontend, backend, API, database schema, map renderer, authentication, deployment configuration, or automated test suite.
-
-Existing layout, with the documentation added by this review:
+**Confirmed:** This repository now has measurement-cleaning code, SQL definitions, and a Python location-import workflow. An untracked Django starter exists locally. There is no implemented PFAS API, frontend, map renderer, or deployed dashboard.
 
 ```text
-README.md
 AGENTS.md
+README.md
 .gitignore
 docs/
   PROJECT_CONTEXT.md
@@ -37,31 +28,72 @@ docs/
   CHAT_SYNTHESIS.md
 notebooks/
   Surface Water and Fish Tissue.ipynb
-data/raw/                 # ignored; local source CSV exists on this machine
-z/                        # ignored; local GIS/Excel files and scratch notebook
-001.code-workspace        # ignored; opens this folder, no custom settings
+  database import locations.ipynb
+sql/
+  create/postgis.sql
+  create/locations_table.sql
+  test.sql
+WI-PFAS Aiven.session.sql
+.vscode/settings.json            # tracked SQLTools connection metadata
+backend/                         # untracked local Django starter
+data/raw/                        # ignored local CSV input
+data/processed/                  # ignored local CSV outputs
 ```
 
-Before this documentation task, Git tracked only README, .gitignore, and the notebook. The initial worktree was clean on `main`; local `HEAD` and `origin/main` pointed to `d6cba73`. No fetch was performed, so this does not verify the current server state. Six commits were visible, from initial cleanup work on 2026-07-29 through cleanup changes on 2026-08-04.
+The laptop does not have the desktop's previously documented `z/` scratch directory or `001.code-workspace`. Those were local desktop artifacts, not clone prerequisites.
 
-The notebook imports `pathlib.Path` and pandas. Its six populated code cells:
+Recent commits establish the progression: `7dc5a22` updated cleanup code, `0f4d1bd` added project documentation, `077adbe` added database setup, `fe7bb3a` began database upload work, and `f878cff` recorded the location upload workflow. The earlier documentation's `d6cba73` baseline is historical.
 
-1. Locate the repository root from the working directory and read the raw CSV.
-2. Unpivot `PFOS_MEASURE` and `PFOA_MEASURE`, retaining `OBJECTID`, `COMMENTS`, and `DATE_YEAR`.
-3. Split slash-separated measurement text into columns and preserve the complete source measure in `original`.
-4. Unpivot split columns `0, 1, 2, 3` into rows and drop null parts.
-5. Apply three text corrections, split dates/results at a colon, derive `result_num` and a text `flag`.
-6. Combine year and month/day into `date` and display one selected source object's rows.
+### Measurement cleaning
 
-The final in-memory columns are `OBJECTID`, `COMMENTS`, `DATE_YEAR`, `analyte`, `original`, `month-day`, `result_num`, `flag`, and `date`. There is no cleaned file export or database load. Four trailing cells are empty. One saved display output remains.
+`notebooks/Surface Water and Fish Tissue.ipynb` imports Path, pandas, and NumPy. Its seven populated cells read the raw CSV, unpivot PFOS/PFOA, split slash-delimited events while preserving `original`, reshape four split columns, derive numeric results/flags, construct dates and comments, and export a CSV. One trailing cell is empty; no saved outputs remain in the current file.
 
-**Proposed architecture:** Cleaned data -> PostgreSQL/PostGIS -> Django/REST API -> JavaScript frontend with coordinated map, table, and charts. Historical suggestions included Django REST Framework, React, TypeScript, Vite, Leaflet or MapLibre GL JS, TanStack Table, and Recharts/ECharts/Chart.js. None is installed or configured in this checkout. Suggested `SamplingLocation`, `SampleEvent`, and `AnalyticalResult` models are conceptual only.
+Compared with the older documentation:
 
-## Data, services, and CRS
+- The date-column removal now uses `inplace=True`; the previously reported bug is fixed.
+- Flags are stripped of surrounding whitespace and blank flags become missing values.
+- `valid_comment` identifies rows with a flag, and `comment` conditionally retains the source comment. Two analyte-specific comment overrides exist for source OBJECTID 1364211; these are specific corrections, not a universal qualifier dictionary.
+- The final columns are `OBJECTID`, `COMMENTS`, `analyte`, `original`, `result_num`, `flag`, `date`, `valid_comment`, and `comment`.
+- An export cell targets `data/processed/processed2.csv`, now inside an ignored directory, but uses an absolute machine-specific path and includes the pandas index by default.
 
-**Confirmed local input:** `data/raw/PFAS Sample Sites - Surface Water and Fish Tissue.csv`. README describes exporting the DNR layer through QGIS. The file is ignored, so another clone needs a separately obtained copy.
+This notebook does not load analytical measurements into PostgreSQL.
 
-Observed input columns:
+### Hosted database and location import
+
+**Owner-reported:** The owner started an Aiven PostgreSQL database, connected through SQLTools in VS Code, enabled PostGIS, created the location table, successfully uploaded records, and resolved the QGIS connection issue. PostgreSQL/PostGIS and Aiven are now current choices, rather than hypothetical architecture.
+
+**Confirmed in SQL:** `sql/create/postgis.sql` contains `CREATE EXTENSION postgis;`. `sql/create/locations_table.sql` defines:
+
+| Column | Definition | Purpose |
+|---|---|---|
+| `objectid` | `integer PRIMARY KEY` | Preserve the source OBJECTID for later measurement joins. |
+| `geom` | `geometry(Point, 3071) NOT NULL` | Store the source point as PostGIS geometry. |
+| `primary_station_name` | `text NOT NULL` | Retain the station name. |
+
+The creation SQL leaves the schema implicit; the import explicitly targets `public.sampling_locations`. No separate spatial index or measurement-table definition is present.
+
+**Confirmed in notebook:** `notebooks/database import locations.ipynb` has eight populated code cells and four empty cells. It:
+
+1. Reads only `OBJECTID`, `wkt_geom_EPSG_3071`, and `PRIMARY_STATION_NAME` from the raw CSV.
+2. Selects Psycopg's binary implementation before importing Psycopg.
+3. Requests a connection URI with `getpass()` and a local CA certificate path with `input()`.
+4. Connects using `sslmode='verify-ca'`, the supplied `sslrootcert`, `connect_timeout=10`, and `gssencmode='disable'`.
+5. Queries the location count, converts the three columns to ordinary tuples, and uses parameterized `executemany()` inserts with `ST_GeomFromText(..., 3071)`.
+6. Commits successful inserts or rolls back on an exception.
+
+The expected input is 367 location records. The owner confirmed successful uploading on September 17. The notebook's only saved query output is `(0,)` from the count cell before insertion; it is not a post-import count. This review has not independently confirmed the hosted row count. The import has no upsert/skip policy or explicit connection-close step; repeating it against the populated table will encounter duplicate primary keys.
+
+**QGIS:** The owner reported the connection worked after correcting misuse of the Service field. The chat distinguished a PostgreSQL service-file name from Aiven's full URI. Checking 367 features, EPSG:3071, and placement against a basemap was suggested, but completion of those visual/count checks was not reported.
+
+### Local backend starter and remaining architecture
+
+**Confirmed, untracked:** `backend/` contains `manage.py`, a Django project named `_crud`, and an `api` app. Settings identify Django 6.1, use default SQLite configuration, and do not register `api`. Models, views, tests, and migrations are still placeholders; URLs expose only the starter admin route. Default development settings include a generated secret key. No Aiven configuration or implemented PFAS endpoint is present, and the starter was not run during this review.
+
+**Future direction:** Link the location table to a measurement table, then expose suitable data through a backend and an interactive frontend. Django is now locally scaffolded, but REST framework, frontend, map/chart/table libraries, and application hosting remain undecided. React/TypeScript/Vite, Leaflet/MapLibre, TanStack Table, and various chart libraries remain historical suggestions. The earlier location/event/result model is not adopted in full.
+
+## Data, sources, and interpretation
+
+The required local input is `data/raw/PFAS Sample Sites - Surface Water and Fish Tissue.csv`, exported from the DNR layer through QGIS and kept out of Git. Its columns are:
 
 ```text
 OBJECTID, wkt_geom_EPSG_3071, PRIMARY_STATION_NAME, TYPE_SPECIFIC_CODE,
@@ -69,84 +101,65 @@ DATE_YEAR, SURFACE_WATER_FLAG, FISH_FLAG, PFOS_MEASURE, PFOA_MEASURE,
 COMMENTS, PDF_PRIMARY_LINK, PDF_SECONDARY_LINK
 ```
 
-The local CSV has 367 rows and 12 columns. All 734 PFOS/PFOA measure cells are nonempty, containing 996 slash-separated parts; the maximum is four parts per measure. These are snapshot counts, not completeness guarantees or counts of unique stations.
+The September 13 laptop inspection found 367 rows, 12 columns, and 996 slash-separated measurement parts, with at most four parts per measure. The September 16 database chat recorded 367 distinct OBJECTIDs, no missing values in the three location fields, and 367 well-formed two-dimensional WKT points. These describe the inspected export, not statewide completeness or permanent identifier stability. An earlier research count of 402 source features remains unexplained.
 
-**Historical service references:** The planning chat identified the following. Current availability, schemas, coverage, and terms must be checked before a new import; these are not configured application integrations.
+**CRS decision:** In Database Discussion, the owner explicitly identified the source WKT as EPSG:3071. The SQL and import now use SRID 3071 for this layer. `ST_GeomFromText(..., 3071)` assigns that SRID; it does not transform coordinates. The exact export settings and independent spatial validation remain undocumented. A future web output requires a deliberate CRS transformation/output choice; the database choice does not select a web-map library or projection.
 
-| Source | Recovered purpose/status |
+**Interpretation still open:** Units, water/fish media attribution for individual results, non-detect/less-than semantics, and a source-backed qualifier dictionary remain unfinished. Some specific comment meanings are encoded, but they should not be generalized without evidence. Preserve original measurement text, source IDs, and provenance; do not treat missing or non-detect values as zero. Geometry and station details now have a location table, while media flags and PDF links are still omitted from the cleaned result table and import.
+
+Historical source references below are retained for continuity; availability, schemas, and terms were not rechecked in this update.
+
+| Source | Role/status |
 |---|---|
-| [Wisconsin DNR PFAS viewer](https://dnrmaps.wi.gov/H5/?viewer=WI_PFAS) | Product reference selected by the owner. |
-| [DNR PFAS MapServer](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer) | Chat reported layers 1/2 for open/closed sites, 10 for surface water/fish tissue, and 801/802/803 for fish advice. |
-| [Surface water/fish tissue layer 10](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/10) | Historical source of current cleanup work. This review's web fetch failed; live metadata was not confirmed. |
-| [Municipal PFAS sampling](https://dnrmaps.wi.gov/arcgis2/rest/services/DG_Groundwater_Retrieval_Network/DG_Municipal_System_PFAS_Sampling_Ext/MapServer/0) | Historically described as categorical sampling summaries, not a complete analytical result table. |
-| [Private Well PFAS Shallow Groundwater Study](https://services5.arcgis.com/Ul9AyFFeFTjf08DW/arcgis/rest/services/Private_Well_PFAS_Shallow_Groundwater_Study_Results/FeatureServer) | Alternative detailed chemistry source; chat identified section polygons at layer 0 and result table 3. Local scratch artifacts exist; no tracked integration. |
-| [Drinking Water System Portal](https://apps.dnr.wi.gov/dwsportalpub/) | Historical exploration of query-based exports; statewide bulk extraction and complete geometry were not established. |
-| [EPA UCMR occurrence data](https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule), [Water Quality Portal](https://www.waterqualitydata.us/webservices_documentation/) | Other historical candidates for detailed chemistry. No import implemented. |
+| [Wisconsin DNR PFAS viewer](https://dnrmaps.wi.gov/H5/?viewer=WI_PFAS) | Owner-selected product reference. |
+| [DNR PFAS MapServer](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer) | Historical source inventory. |
+| [Surface water/fish tissue layer 10](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/10) | Source of the current CSV workflows; no live service ingestion is implemented. |
+| [Municipal sampling](https://dnrmaps.wi.gov/arcgis2/rest/services/DG_Groundwater_Retrieval_Network/DG_Municipal_System_PFAS_Sampling_Ext/MapServer/0) | Historically explored categorical summaries. |
+| [Private-well study](https://services5.arcgis.com/Ul9AyFFeFTjf08DW/arcgis/rest/services/Private_Well_PFAS_Shallow_Groundwater_Study_Results/FeatureServer) | Historical alternative chemistry source; no tracked import. Preserve generalized location precision if used. |
+| [Drinking Water System Portal](https://apps.dnr.wi.gov/dwsportalpub/), [EPA UCMR](https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule), [Water Quality Portal](https://www.waterqualitydata.us/webservices_documentation/) | Historical candidates, not implemented integrations. |
 
-USGS National Hydrography Dataset was an owner-proposed context layer. No specific hydrography service or dataset version is selected.
+USGS hydrography remains an owner-proposed context layer; no specific dataset/version is chosen.
 
-**CRS:** The input geometry column is labeled `wkt_geom_EPSG_3071`. That label alone does not verify the export's actual coordinates, datum transformation, or the source service CRS. The notebook treats the CSV as a plain table; it neither parses geometry nor reprojects it, and geometry is omitted from the long-format result. Confirm the QGIS export settings and source metadata before spatial work. A future RFC 7946 GeoJSON output must use WGS 84 longitude/latitude in decimal degrees, requiring an actual transformation from the verified source CRS where necessary. See [RFC 7946, sections 3.1.1 and 4](https://www.rfc-editor.org/rfc/rfc7946.html#section-4). No database SRID or web-map CRS decision has been made.
+## Laptop environment and connection workflow
 
-**Data interpretation remains unresolved:** Confirm measurement units, the meaning of `*` and `**`, non-detect/less-than semantics, and whether each result represents water or fish tissue using authoritative metadata/PDFs. Preserve the source's location precision if private-well data is used; do not infer exact well locations from generalized geometry.
+**Checked locally on 2026-09-18:** The Miniforge environment `wi-pfas` has Python 3.12.14, pandas 3.0.5, NumPy 2.5.3, ipykernel 7.3.0, Psycopg 3.3.4, psycopg-binary 3.3.4, and Django 6.1 according to its interpreter/package metadata. Both notebooks name the `wi-pfas` kernel. These are observed versions, not a committed dependency specification.
 
-## Development and verification workflow
+The September 13 laptop review verified pandas/NumPy/ipykernel imports, VS Code Python/Jupyter extensions, and a matching kernel specification. Its ordinary shell resolved Python to a Windows app alias. The older desktop review instead observed Python 3.12.13/pandas 3.0.3 in `wi-pfas` and a separate default Python 3.14.2. Do not substitute either computer's default interpreter for the selected project environment. There is no `environment.yml`, requirements file, lockfile, or portable cross-machine setup policy.
 
-**Verified environment:** A local Miniforge environment named `wi-pfas` contains Python 3.12.13, pandas 3.0.3, and ipykernel. Notebook metadata agrees on Python and display name. The ordinary shell's `python` is instead Python 3.14.2 without pandas. This is a machine-specific finding, not a portable interpreter path or a compatibility judgment.
+**Connection history:** SQLTools worked after the owner manually entered the Aiven CA certificate path. Current tracked settings ask for a password and set certificate verification, but also retain service-specific connection metadata and a local CA path. Their values are deliberately omitted here. Moving those settings to personal configuration remains a portability/privacy cleanup item; this update does not alter them.
 
-**Package manager:** Miniforge/mamba was the owner's historical preference and a local mamba launcher exists. There is no committed `environment.yml`, requirements file, lockfile, or Python version pin. The laptop chat proposed a pip/`.venv` setup; there is no evidence it was completed. Choose and record a reproducible setup before treating either recipe as canonical.
+Python connection troubleshooting corrected `connection_timeout` to `connect_timeout`, added `gssencmode='disable'`, selected the installed Psycopg binary client, and finally changed `verify-full` to `verify-ca` while retaining the Aiven CA. The owner confirmed success after that last change. Switching to the binary client alone did not fix the certificate error. The chat records `verify-ca` as a workaround that omits hostname matching; it is not evidence that the underlying client issue was repaired. Revisit stronger verification when resolving that issue rather than treating it as permanently settled architecture.
 
-To use the existing setup:
+For later work:
 
-1. Open the clone's root in VS Code with Python and Jupyter support.
-2. Obtain the raw CSV at the exact relative path above. README gives the general QGIS route; a precise export recipe is still missing.
-3. Select the intended environment as the notebook kernel. In a shell initialized for mamba, `mamba activate wi-pfas` selects the verified local environment if it exists on that machine.
-4. Verify the active shell interpreter with `python --version` and `python -c "import pandas as pd; print(pd.__version__)"`. Shell activation and notebook kernel selection are separate.
-5. Restart the kernel and run populated cells in order with the working directory at the root or `notebooks/`. The path logic does not support arbitrary working directories.
-6. Inspect parsed dates, numeric values, flags, and source-row traceability. Review outputs before sharing; keep raw data and scratch files local.
+- Select the intended environment and notebook kernel separately. The notebook input-path logic supports the repository root or `notebooks/` as working directory.
+- Keep the raw CSV, credentials, and downloaded CA file local. The notebooks do not require a configured database environment variable; the import collects connection information at runtime.
+- Inspect an existing table before choosing to load data. Do not use Run All on the import notebook as a read-only validation step, and do not recreate a populated table to repeat an exercise.
+- SQLTools, Python, and QGIS have separate connection settings. QGIS success does not automatically configure the other clients.
+- No PFAS application start/build/test workflow is established. Django's generated management entry point exists, but the application integration is unfinished.
 
-No application start/build/lint/test command is configured. Use `git status --short --branch` and `git diff --check` for change review. For an already configured second clone, check for local edits before `git pull --ff-only`; resolve divergence deliberately. Committed documentation can travel through Git when the owner chooses to commit/push; ignored data, environments, and scratch files require separate setup.
+## Verification and remaining work
 
-**Review validation:** All code cells passed Python syntax parsing. The six populated cells were executed in order in memory using the existing environment and local CSV, without saving the notebook or writing cleaned data. Result: 996 rows, zero missing dates, and zero date-year mismatches against `DATE_YEAR`. There were 98 missing numeric results: 93 non-detect text cases, four no-sample cases, and one less-than case. These categories were inspected through resulting flags; their scientific interpretation is not validated. This successful run is a smoke check against one local snapshot, not a comprehensive test suite.
+**Historical execution baseline:** The September 13 desktop documentation review ran the older six-cell cleanup workflow in memory and reported 996 rows, no missing dates/year mismatches, and 98 missing numeric values (93 non-detect text cases, four no-sample cases, and one less-than case). That was a smoke check on an older revision, not scientific validation or a fresh run of current notebooks.
 
-## Completed work and current progress
+**Current review:** Inspected current SQL, notebook source/saved outputs, sanitized configuration structure, backend placeholders, Git state, package metadata, and all 29 Database Discussion turns. No database access or notebook execution was performed. The owner's successful upload report is retained separately from the unverified post-load row count.
 
-**Confirmed completed:** Repository initialization; shareable notebook location and relative input path; ignore rules; README describing the initial dataset; working unpivot/split/date parsing on the current CSV. This review adds repository-based guidance, context, decisions, and a chat inventory.
+Remaining limitations:
 
-**In progress, inferred from code and latest development history:** Finishing trustworthy normalization of the surface-water/fish-tissue measurements. The notebook is exploratory and not yet a reusable validated import pipeline. No uncommitted application changes were present at the start of this review. The exact next coding task has not been reconfirmed with the owner.
+- The cleanup still hardcodes four split columns, uses three undocumented source-text substitutions, and coerces distinct nonnumeric cases to missing numeric values without extracting the less-than limit.
+- Measurement row identity, foreign-key design, units/media/qualifier handling, and preservation of source links need decisions before analytical-result loading.
+- The database load has no repeat-import policy, post-import verification cell, or reusable command-line import script. DDL is manual SQL, not a migration system.
+- The export path is still absolute. The processed CSV includes an unnamed index column; decide whether that belongs in the eventual import contract.
+- Exact source export date, filters, QGIS recipe, data dictionary, environment manifest, and automated checks remain absent.
+- SQLTools connection metadata is tracked despite the convention to keep machine/service-specific configuration local. The untracked backend also needs configuration review before sharing; do not publish its generated development secret.
+- Code licensing and data reuse/attribution terms remain unrecorded.
 
-## Known bugs, limitations, and technical debt
+## Next milestones for owner selection
 
-- **Confirmed bug:** Cell 6 calls `df_unpivot.drop(columns=['DATE_YEAR', 'month-day'])` without assigning its return or using `inplace=True`; the columns remain.
-- **Confirmed limitation:** The second unpivot hardcodes four split columns. Inputs requiring more than four parts can lose extra parts; inputs whose maximum is fewer than four can fail on missing columns. The current CSV happens to fit.
-- **Confirmed limitation:** Numeric coercion makes distinct text cases missing; it does not extract a numeric detection limit from the less-than case. Flags retain inconsistent spaces/capitalization and have no normalized interpretation.
-- **Confirmed limitation:** Geometry, station names, media flags, and PDF links remain in `df_raw` but are omitted from the derived table. Future exports must retain or reliably join provenance and location/media information.
-- **Unvalidated assumptions:** Three hardcoded text substitutions repair specific source strings without a documented source correction log. Their intended dates need confirmation.
-- **Validation gap:** Mixed-format date parsing succeeded on this snapshot but is not a guarantee for future exports. The [pandas documentation](https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html) describes per-element inference for `format='mixed'` and notes that `yearfirst` is a preference rather than strict validation.
-- **Reproducibility gaps:** No environment manifest, source export date/query, exact QGIS recipe, data dictionary, cleaned-output contract, repeatable validation suite, or tracked import script.
-- **Publication gaps:** One notebook output is currently saved despite an older chat reporting zero outputs. No LICENSE file was found; code licensing and data reuse/attribution terms remain unrecorded.
-- **Coverage discrepancy:** An earlier chat reported 402 source features; this local CSV has 367 rows. Export filtering, source updates, or another cause are possible but unconfirmed.
+1. Verify the existing hosted location layer with a read-only count/SRID check and QGIS placement inspection, recording the result.
+2. Design the analytical measurement table and its link to `sampling_locations.objectid`; decide keys, missing-result treatment, and import rerun behavior.
+3. Implement and validate that measurement import in manageable steps while keeping original text and provenance.
+4. Capture a reproducible environment and make output/connection configuration portable; move stable import logic to a script when useful.
+5. Continue the local Django starter deliberately, choose a first read-only PFAS endpoint, and later choose the frontend/map stack and application hosting.
 
-## Plans and recommended milestones
-
-**Owner intentions:** A polished Wisconsin PFAS explorer; filtering/search/highlighting; richer data exploration; possible hydrography background. Map/table/chart coordination matches the original dashboard concept.
-
-**Historical assistant proposals, not a committed backlog:** Layer toggles, feature detail panels, summary cards, time-series plots, screening-level comparisons, administrative imports, and the proposed web stack. Units and authoritative comparison criteria must be settled before quantitative comparisons.
-
-**Recommended sequence for owner review:**
-
-1. Document the exact data acquisition recipe, snapshot identity, schema, CRS, units, qualifiers, and known source anomalies.
-2. Finish normalization and validation in small learning steps; preserve original text, distinguish missing-result categories, and define expected output and provenance.
-3. Capture the working environment and add focused parser checks covering actual irregular inputs. Move stable logic into a script when ready.
-4. Choose the smallest web slice and record framework/map-library decisions. Historical suggestion: one cleaned layer through PostGIS and a Django API onto a map with a table/detail view.
-5. Add coordinated filtering/charts and then additional layers/hydrography. Plan a small early deployment after a runnable slice exists.
-
-## Questions for the owner
-
-- Is recreating the broader PFAS viewer still the goal, with surface water/fish tissue as the first layer?
-- Which Python environment approach should both computers use, and has the laptop setup actually been completed?
-- What export date, filters, and QGIS settings produced the 367-row CSV?
-- Where are the authoritative units, qualifier definitions, and explanations for malformed dates?
-- Which suggested frontend/map libraries, deployment target, and first web features should become accepted decisions?
-- Are there additional project chats on the other computer that should be added to the inventory?
-
-Update this file as these answers become available; keep the historical evidence in CHAT_SYNTHESIS and accepted choices in [DECISIONS.md](DECISIONS.md).
+Open questions include source interpretation and export provenance; cross-machine environment policy; post-load/QGIS verification results; measurement schema; how the new Django starter should connect to and represent the manually created database; and future frontend/hosting choices. Aiven database hosting is already selected; application hosting is not.
