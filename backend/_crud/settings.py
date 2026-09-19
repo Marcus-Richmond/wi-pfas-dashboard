@@ -83,11 +83,20 @@ WSGI_APPLICATION = '_crud.wsgi.application'
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": env.db(
+        "DATABASE_URL",
+        engine="django.contrib.gis.db.backends.postgis",
+    )
 }
+
+DATABASES["default"].setdefault("OPTIONS", {}).update(
+    {
+        "sslmode": "verify-ca",
+        "sslrootcert": env("DATABASE_SSLROOTCERT"),
+        "connect_timeout": 10,
+        "gssencmode": "disable",
+    }
+)
 
 
 # Password validation
