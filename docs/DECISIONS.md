@@ -2,6 +2,8 @@
 
 Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the backend/deployment conversation. Earlier Database Discussion evidence remains recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). Review dates are not automatically decision dates; assistant proposals are not treated as owner-approved architecture.
 
+Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new owner direction and teaching preferences. Configuration-tracking status in D04 was reconciled with the current checkout and the Documentation task.
+
 ## D01 — Wisconsin PFAS as the project domain
 
 - **Status:** Owner-stated direction; README, notebooks, and SQL confirm work in this domain.
@@ -35,7 +37,7 @@ Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the bac
 - **Decision:** Track reusable code/docs while ignoring scratch space, raw/intermediate/processed data, environments, real `.env` files, and workspace files. Prefer repository-relative paths.
 - **Rationale:** Share progress without publishing local data, machine-specific configuration, or secrets.
 - **Alternatives discussed:** Commit the public CSV; select scratch data using `WI_PFAS_DATA_DIR`; include the VS Code workspace.
-- **Consequences:** Each computer needs local data and environment setup. `WI_PFAS_DATA_DIR` and `.env.example` are not implemented. The import requests credentials and CA path at runtime. Its `PSYCOPG_IMPL` setting selects a client implementation and is not a stored database credential. The cleanup export still uses an absolute path. Tracked `.vscode/settings.json` contains service/machine-specific SQLTools metadata despite this convention; moving it to personal settings is unresolved. No such values are copied into these docs.
+- **Consequences:** Each computer needs local data and environment setup. `WI_PFAS_DATA_DIR` and `.env.example` are not implemented. The import requests credentials and CA path at runtime. Its `PSYCOPG_IMPL` setting selects a client implementation and is not a stored database credential. The cleanup export still uses an absolute path. `.vscode` is now ignored and untracked; the Documentation task records the completed removal from published history. Keep these settings personal. No connection values are copied into these docs.
 - **Evidence:** Data Clean Up; .gitignore; notebooks; sanitized SQLTools configuration inspection.
 
 ## D05 — Reshape measurements into analytical-result rows
@@ -58,10 +60,10 @@ Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the bac
 
 ## D07 — Backend, frontend, and application hosting
 
-- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. Frontend choices remain open.
+- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. Frontend direction is now recorded in D15; implementation has not begun.
 - **Decision:** Build a read-only location API over the existing Aiven PostGIS table, following the predecessor project's general REST approach. Deploy this project's backend to Render Free.
 - **Observed implementation:** Tracked `_crud` and `api` code, unmanaged location model, GeoJSON serializer, list/detail routes, environment-based PostGIS configuration, and Docker deployment files.
-- **Alternatives discussed:** Aiven as a possible app host; native versus Docker deployment; several frontend/map libraries. React/TypeScript/Vite and Leaflet/MapLibre remain proposals.
+- **Alternatives discussed:** Aiven as a possible app host; native versus Docker deployment; several frontend/map libraries. Earlier React/TypeScript/Vite and Leaflet/MapLibre proposals are historical; D15 records the owner's later frontend direction.
 - **Consequences:** Aiven hosts the database; Render hosts Django. No frontend or measurement API is implemented. Do not infer a frontend selection from the backend milestone.
 - **Evidence:** Current backend files and owner's reports of successful Render list/detail/styling checks; details in D13–D14.
 
@@ -125,3 +127,21 @@ Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the bac
 - **Rationale:** Package GDAL/GEOS alongside Django while honoring the owner's mamba preference.
 - **Consequences:** Keep the image entrypoint's environment activation. Supply credentials through Render environment variables and the Aiven CA through a secret file. Linux library paths belong to the image; Windows settings remain local. Startup performs no migration or data import. The earlier pip requirements list is not the deployment dependency source. Free-tier operational limits should be checked in current provider documentation when needed.
 - **Evidence:** Dockerfile, environment manifest, ignore rules, Django settings, and this conversation's deployment reports. The Render dashboard and exact deployed URL were not independently audited. See [BACKEND_SETUP.md](BACKEND_SETUP.md).
+
+## D15 — Begin frontend learning with MapLibre and the preferred React/TypeScript direction
+
+- **Status:** Owner-selected next phase and MapLibre choice; React/TypeScript are the owner's preferred direction. No frontend implementation or dependency installation yet.
+- **Direction:** Retain MapLibre from the predecessor and learn React/TypeScript through this GIS application. Build on basic JavaScript and Python experience, especially object/dictionary-driven filtering. The owner found Code with Mosh's instruction useful but needs examples tied to web GIS.
+- **Workflow:** The owner prefers to create source/configuration files personally, in small explained steps. A generator is acceptable if manual setup becomes disproportionately tedious. npm can install dependencies without scaffolding source files; generated dependency folders and lockfiles should remain tool-managed.
+- **Assistant proposals:** Manually configure a minimal Vite project, start with station components and selection, then integrate MapLibre and the existing location API. Direct MapLibre integration initially would preserve familiar methods while teaching React setup/cleanup. These are recommendations, not installed or accepted implementation details.
+- **UI choice deferred by the owner:** Review Material UI and alternatives when UI work becomes relevant. Coordinate map, list, counts, and later charts through shared application state; use shared style values for map layers and UI. No library automatically supplies this coordination or themes MapLibre's canvas.
+- **Consequences:** Teach component inputs, state, array/object replacement, refs, effects, and types through concrete GIS tasks as needed. Use explicit data fields before designing generic filter frameworks. First exercises must reflect the existing location-only API; no measurement/media filters are available yet.
+- **Evidence:** Current frontend request, repository source at `a473324`, and the reviewed public predecessor files, especially [buttons2.js](https://github.com/Marcus-Richmond/WebGIS_ProjectLocationMap/blob/main/frontend_basic2/components/buttons/buttons2.js).
+
+## D16 — Deploy the frontend early on free hosting
+
+- **Status:** Explicit owner requirement on 2026-09-20; no frontend hosting service configured yet.
+- **Decision:** Publish the first small working frontend page and keep deploying incremental progress, addressing deployment during initial setup rather than after completing the dashboard.
+- **Assistant proposal:** Use a Render Static Site alongside the existing Render backend. A manually assembled React/TypeScript/Vite app can build to static files; connect the repository's future `frontend` directory and publish `dist`. Enable deployment from the intended Git branch. Render is a recommendation, not an owner-selected frontend provider.
+- **Consequences:** Establish the build and public URL early; verify the deployed page before expanding features. Configure the public API URL and explicit browser cross-origin access when connecting data. The frontend never needs Aiven credentials. Static hosting is free within the provider's applicable allowances; build minutes and bandwidth count toward workspace usage. The existing free backend can still spin down independently of the static site.
+- **Evidence:** Owner follow-up requesting free early hosting; current [Render Static Sites documentation](https://render.com/docs/static-sites), [Render Free documentation](https://render.com/docs/free), and [Vite deployment guide](https://vite.dev/guide/static-deploy.html#render), reviewed 2026-09-20. No account usage, billing settings, or deployment dashboard was inspected.

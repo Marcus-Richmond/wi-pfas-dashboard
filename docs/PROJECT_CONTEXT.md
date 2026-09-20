@@ -2,6 +2,8 @@
 
 Updated 2026-09-20 against local `HEAD` `95cbd8a` and the backend/deployment conversation. The working tree was clean before this documentation update; `main` matched the locally recorded `origin/main` without a fetch. Earlier database and notebook evidence is retained from the September 18 review. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for coverage limits.
 
+Frontend orientation later on 2026-09-20 checked the clean checkout at `a473324`, the available related tasks, and the public predecessor's frontend source. The owner now wants to work on the frontend, retaining MapLibre and preferring React/TypeScript. No frontend files or dependencies have been added. This review also confirmed that `.vscode` is ignored and untracked, superseding the earlier configuration-tracking concern.
+
 **Evidence labels:** Confirmed means observed in repository files or directly checked during the stated review. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review. Proposed means suggested but not accepted or implemented. Unresolved means the available evidence does not settle it. This review did not execute either notebook, run SQL, or connect to Aiven.
 
 ## Purpose and learning objectives
@@ -13,6 +15,18 @@ The immediate audience is the owner and people reviewing the learning work; even
 The owner writes application code with manageable steps, explanations, syntax help, and debugging guidance unless direct implementation is requested. Prefer mamba for package installation when available; explain any pip exception. Every command instruction must identify the terminal, active environment, and working directory. File edits should explicitly name VS Code. In Database Discussion, the owner considered the first layer sufficiently cleaned to move on to database work. Remaining data-quality questions below do not reverse that chosen milestone.
 
 The separate **Project Location Map** remains a predecessor project. Its deployed application is background experience, not evidence of a running PFAS dashboard.
+
+### Frontend learning direction
+
+The owner knows basic JavaScript and has studied React/TypeScript through Code with Mosh. Teach new concepts through web GIS tasks, using Python dictionaries/lists/functions and existing JavaScript patterns as bridges. Prefer guided exercises, syntax explanations, and small steps that the owner writes and verifies. Introduce types through station properties, component inputs, filter values, and selected location IDs; do not imply that TypeScript validates incoming API data at runtime.
+
+The reviewed predecessor's `frontend_basic2/components/buttons/buttons2.js` uses nested objects, `Object.entries()`, asynchronous API calls, dynamic buttons, and shared filters to update counts and MapLibre styling/data. These are useful foundations. React lessons should distinguish application data/state from DOM element references, and replacement of state objects/arrays from the predecessor's `push`/`splice` mutations.
+
+**Owner direction:** Continue with MapLibre; prefer React and TypeScript; manually create frontend source/configuration files where practical. npm dependency installation is compatible with that preference. Review Material UI and alternatives later, focusing on coordinated map/UI data, styling, accessibility, and relevant component licensing.
+
+**Early hosting requirement:** The owner wants free frontend hosting from the first small working page, followed by incremental live updates, to handle deployment early. Proposed host: a Render Static Site alongside the existing Render backend, connected to the same repository with a future `frontend` root and Vite's `dist` output. The host is not yet selected/configured. Deploy the initial page before the full map milestone, then connect the public API and check browser access between the two origins. Current Django settings have no CORS configuration. Free hosting has usage allowances; a static frontend does not prevent the existing free backend from spinning down. See D16 and its provider references.
+
+**Proposed teaching path, not implemented:** A small manually configured Vite frontend; first render a station component, then learn selection state, add MapLibre, fetch the existing location GeoJSON, and coordinate map/list/search through shared state. Keep the MapLibre instance stable and teach setup/cleanup explicitly. Use shared style constants for UI and map colors. Vite, direct MapLibre integration versus a React wrapper, a basemap provider, and the UI library remain proposals/open choices. Start with location fields actually exposed by the API; measurement filters require later data work.
 
 ## Current implementation and repository layout
 
@@ -34,7 +48,6 @@ sql/
   create/locations_table.sql
   test.sql
 WI-PFAS Aiven.session.sql
-.vscode/settings.json            # tracked SQLTools connection metadata
 backend/                         # tracked Django API and Docker deployment
   _crud/                         # settings and project URLs
   api/                           # location model, serializer, viewset, router
@@ -105,7 +118,7 @@ Settings read local `.env` values through django-environ and use the PostGIS bac
 
 Render Free is the selected backend hosting tier; Aiven remains the database host. The Render dashboard configuration and public service URL were not independently inspected during this documentation update. The exact public URL has not been supplied in this conversation. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for configuration, commands, and repeatable smoke checks.
 
-**Remaining architecture:** The measurement schema/import and frontend/map/table/chart choices remain open. React/TypeScript/Vite, Leaflet/MapLibre, and the earlier multi-model measurement design are proposals, not implemented selections.
+**Remaining architecture:** MapLibre is now the owner's map choice, with React/TypeScript the preferred frontend learning direction. Vite, UI/table/chart libraries, and integration details remain proposals or open choices. No frontend is implemented. The measurement schema/import and the earlier multi-model measurement design remain unresolved.
 
 ## Data, sources, and interpretation
 
@@ -142,7 +155,7 @@ USGS hydrography remains an owner-proposed context layer; no specific dataset/ve
 
 The September 13 laptop review verified pandas/NumPy/ipykernel imports, VS Code Python/Jupyter extensions, and a matching kernel specification. Its ordinary shell resolved Python to a Windows app alias. The older desktop review instead observed Python 3.12.13/pandas 3.0.3 in `wi-pfas` and a separate default Python 3.14.2. Do not substitute either computer's default interpreter for the selected project environment. The backend now has `environment.yml` for its Linux container and an earlier unused `requirements.txt`. The container manifest is not a complete Windows/notebook environment recipe (it includes Gunicorn); cross-machine notebook setup and a full dependency lock remain open.
 
-**Connection history:** SQLTools worked after the owner manually entered the Aiven CA certificate path. Current tracked settings ask for a password and set certificate verification, but also retain service-specific connection metadata and a local CA path. Their values are deliberately omitted here. Moving those settings to personal configuration remains a portability/privacy cleanup item; this update does not alter them.
+**Connection history:** SQLTools worked after the owner manually entered the Aiven CA certificate path. Previously tracked settings contained service-specific connection metadata and a local CA path. The Documentation task records their removal from published history; the frontend orientation at `a473324` confirmed `.vscode` is ignored and untracked. Personal connection settings remain local; their values are deliberately omitted here.
 
 Python connection troubleshooting corrected `connection_timeout` to `connect_timeout`, added `gssencmode='disable'`, selected the installed Psycopg binary client, and finally changed `verify-full` to `verify-ca` while retaining the Aiven CA. The owner confirmed success after that last change. Switching to the binary client alone did not fix the certificate error. The chat records `verify-ca` as a workaround that omits hostname matching; it is not evidence that the underlying client issue was repaired. Revisit stronger verification when resolving that issue rather than treating it as permanently settled architecture.
 
@@ -167,15 +180,15 @@ Remaining limitations:
 - The database load has no repeat-import policy, post-import verification cell, or reusable command-line import script. DDL is manual SQL, not a migration system.
 - The export path is still absolute. The processed CSV includes an unnamed index column; decide whether that belongs in the eventual import contract.
 - Exact source export date, filters, QGIS recipe, data dictionary, a complete notebook environment manifest, and implemented automated tests remain absent.
-- SQLTools connection metadata is tracked despite the convention to keep machine/service-specific configuration local. The tracked SQLite artifact is unused by the PostGIS settings and remains a cleanup item. Real `.env` values and certificates must remain outside Git.
+- The tracked SQLite artifact is unused by the PostGIS settings and remains a cleanup item. Real `.env` values, personal SQLTools settings, and certificates must remain outside Git.
 - Code licensing and data reuse/attribution terms remain unrecorded.
 
 ## Next milestones for owner selection
 
-1. Choose a frontend/map stack and build a small view using the deployed location API, or begin measurement-table design; neither next branch is selected yet.
+1. Begin the owner-selected frontend learning phase: MapLibre with the preferred React/TypeScript direction. The proposed first integrated milestone is a station map/list with search and shared selection using the existing location API; establish the minimal tooling and components in manageable steps first.
 2. Design the analytical measurement table and its relationship to `sampling_locations.objectid`, including identity, units, qualifiers, missing-result semantics, and import rerun behavior.
 3. Implement and validate measurement loading in manageable steps while preserving original text and provenance.
 4. Record independent QGIS placement/SRID verification; the reported API checks do not establish spatial correctness or scientific validity.
 5. Improve notebook portability, repeat-import handling, dependency locking, and meaningful automated checks as their scope becomes clear.
 
-Open questions include source interpretation and export provenance, cross-machine notebook setup, QGIS spatial validation, measurement schema, and frontend choices. Django/DRF, GeoJSON output in EPSG:4326, Aiven database hosting, and Render Docker backend hosting are now established for this milestone.
+Open questions include source interpretation and export provenance, cross-machine notebook setup, QGIS spatial validation, measurement schema, and frontend tooling/UI/integration details. Django/DRF, GeoJSON output in EPSG:4326, Aiven database hosting, and Render Docker backend hosting are established. MapLibre and the React/TypeScript learning direction are recorded above without implying frontend implementation.

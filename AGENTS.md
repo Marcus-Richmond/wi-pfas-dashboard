@@ -7,6 +7,9 @@ Before planning substantial work, read [docs/PROJECT_CONTEXT.md](docs/PROJECT_CO
 ## Collaboration and development
 
 - Prefer manageable steps, explanations, syntax help, and debugging guidance during learning discussions. The historical preference is for the owner to write application code; an explicit request to implement or edit authorizes that work.
+- Teach React/TypeScript through web GIS examples, building on basic JavaScript and Python dictionaries, lists, and functions. The owner liked Code with Mosh's teaching but needs help applying those concepts to maps. Use the predecessor's object-driven filters as a bridge; explain React state updates rather than carrying over direct DOM mutation.
+- MapLibre is the owner's frontend map choice; React and TypeScript are the preferred learning direction. Prefer manually creating a small set of source/configuration files with explanations. npm can manage dependencies without generating a template. Vite is proposed, not installed. Compare Material UI and alternatives when UI work becomes relevant; no UI library is selected.
+- Deploy the first small frontend page to free hosting early, then keep it live as features are added. The owner wants deployment integrated into the learning workflow. Render Static Sites is proposed because the backend already uses Render; no frontend host has been selected or configured yet.
 - Prefer mamba for package installation when available; explain exceptions before suggesting pip. Container deployment uses micromamba and `backend/environment.yml`.
 - Always identify the terminal, active environment, and working directory for commands. Distinguish VS Code file edits, Miniforge Prompt commands, PowerShell commands, and Python/Django shell input. Default local Python instructions to Miniforge Prompt with `wi-pfas` active.
 - Keep scope focused on the requested learning milestone. Do not scaffold a proposed web stack merely because it appears in historical plans.
@@ -35,4 +38,4 @@ git status --short --branch
 git diff --check
 ```
 
-For cleaning work, use `notebooks/Surface Water and Fish Tissue.ipynb` and the `wi-pfas` kernel; review the export destination before execution. `notebooks/database import locations.ipynb` is a separate database-writing workflow, not a routine smoke test. It requests the connection URI through `getpass()` and the CA certificate path at runtime. Never copy those values into documentation. Tracked SQLTools settings currently contain machine/service-specific metadata; treat that as a portability issue to resolve, not a reusable configuration template.
+For cleaning work, use `notebooks/Surface Water and Fish Tissue.ipynb` and the `wi-pfas` kernel; review the export destination before execution. `notebooks/database import locations.ipynb` is a separate database-writing workflow, not a routine smoke test. It requests the connection URI through `getpass()` and the CA certificate path at runtime. Never copy those values into documentation. VS Code/SQLTools settings are now ignored and untracked; keep those personal settings local. The Documentation task records the completed published-history cleanup.

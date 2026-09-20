@@ -2,6 +2,25 @@
 
 Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Updated again 2026-09-20 against `95cbd8a` and the backend/deployment conversation available in this task. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
 
+## September 20 update: frontend orientation
+
+The current frontend request was reconciled with the clean checkout at `a473324`, current backend models/serialization/routes, README, context/decision/setup records, and ignore rules. No API/database calls, imports, migrations, or application changes were made. The following available task messages were reviewed; this was a targeted review, not a full replay of all historical tool outputs or attachments:
+
+| Current task title | Task ID | Coverage |
+|---|---|---|
+| Backend | `01a0b763-b036-7513-a9b0-77417eb61d69` | Latest 8 turns: deployment preparation, owner-reported success, documentation update, and suggested next milestone. Older history remains represented by the earlier synthesis. |
+| Documentation | `01a09cb8-41f2-7fc3-9e2f-b7e5e72cffa2` | Latest 6 turns: database documentation and subsequent VS Code settings/history cleanup. |
+| Database | `01a09cbd-c941-7b51-84f9-d7b4c1d557b6` | Latest 6 turns: connection workaround, insert workflow, owner-reported upload and QGIS connection success. |
+| Data | `01a0975c-8d05-7b41-88f9-310bc00aa9bc` | The one returned turn, including the owner's explicit preference for guided programming help. |
+
+The public [WebGIS_ProjectLocationMap repository](https://github.com/Marcus-Richmond/WebGIS_ProjectLocationMap) was read through GitHub's API and raw files. Reviewed `frontend_basic2/index.html`, `package.json`, `components/map.js`, both button scripts, three layer scripts, and CSS. Its active HTML loads `buttons2.js`; that script constructs attribute filters from nested objects and `Object.entries()`, fetches filtered data/counts, and updates DOM buttons and MapLibre source/paint properties. This is evidence of prior coding patterns, not a fresh execution or backend audit of the predecessor.
+
+New owner direction: work on the frontend, keep MapLibre, prefer React/TypeScript, and connect lessons to web GIS and existing JavaScript/Python knowledge. The owner prefers to create files manually where useful and wants to compare Material UI and alternatives later. A minimal manual Vite setup and a station map/list/search milestone are assistant proposals; no frontend dependencies or source files were created. See D15 in [DECISIONS.md](DECISIONS.md).
+
+In a follow-up, the owner requested free frontend hosting early so progress is live and deployment is addressed during setup. Render Static Sites was recommended based on the existing backend host and current provider/Vite documentation. The first small page should be deployed before completing map and API integration. Provider selection and configuration remain pending; see D16.
+
+One earlier status was stale: `.vscode` is currently ignored/untracked, and the Documentation task reports completing the published-history cleanup. The current checkout was checked; remote history was not re-audited in this orientation. Earlier entries below about tracked settings are historical.
+
 ## September 20 update: backend and deployment
 
 Coverage: the backend/deployment conversation available in this task, including the owner's setup reports and the Render configuration instructions, reconciled with tracked backend source at `95cbd8a`. This is not a new inventory or full replay of other tasks. The original error attachment and every historical tool result were not reread; missing troubleshooting details are not reconstructed as fact. Earlier coverage records below remain historical.
