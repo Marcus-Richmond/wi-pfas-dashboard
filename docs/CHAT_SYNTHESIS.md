@@ -1,6 +1,24 @@
 # Chat synthesis and review coverage
 
-Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
+Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Updated again 2026-09-20 against `95cbd8a` and the backend/deployment conversation available in this task. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
+
+## September 20 update: backend and deployment
+
+Coverage: the backend/deployment conversation available in this task, including the owner's setup reports and the Render configuration instructions, reconciled with tracked backend source at `95cbd8a`. This is not a new inventory or full replay of other tasks. The original error attachment and every historical tool result were not reread; missing troubleshooting details are not reconstructed as fact. Earlier coverage records below remain historical.
+
+Recovered decisions and progress:
+
+- The owner chose a Django REST approach similar to the separate WebGIS Project Location Map predecessor. This project now has its own implemented API.
+- Windows GDAL discovery initially failed. Configuration of the library path was followed by successful loading through `manage.py shell`; the owner supplied GDAL `(3, 13, 3)` and GEOS `3.14.1-CAPI-1.20.5` output.
+- PostGIS settings use django-environ, a database URL, and nested connection options. The owner reported successful checks, the expected location count, ORM retrieval, and API requests.
+- The implemented unmanaged location model maps the existing table. The GeoJSON serializer transforms output to EPSG:4326, while storage remains EPSG:3071. Read-only list/detail routes are present.
+- The owner explicitly requested terminal/environment/directory instructions and reiterated a preference for mamba over pip where possible. These are ongoing coaching preferences.
+- The owner selected Render Free for the backend, retaining Aiven for PostgreSQL/PostGIS. WhiteNoise was installed and tested locally with debug disabled.
+- A pip requirements list was created earlier. The deployment approach then adopted a conda-forge `environment.yml` and micromamba Docker image. The Dockerfile uses the YAML; the requirements file remains tracked but unused by that build.
+- The owner reported pushing the deployment changes, bringing the Render backend online, and passing the hosted list HTTP 200/data, browsable styling, and known-record detail checks.
+- The current request authorizes documentation updates only and explicitly withholds a GitHub push. No commit or push is part of this update.
+
+Evidence limits: current source establishes implementation; hosted operation and database results are owner-reported. No Render dashboard, fresh API/database request, notebook execution, or container build was performed for this documentation update. The public service URL was not supplied. Deployment instructions are preserved in [BACKEND_SETUP.md](BACKEND_SETUP.md), with no real credentials or machine-specific certificate paths.
 
 ## September 18 update: inventory and coverage
 
@@ -66,7 +84,7 @@ Recovered progression:
 
 Useful cautions from the history: malformed date strings, non-detect text, separate meanings for single/double asterisks, and possible differences in units/media. Earlier suggestions that a single asterisk might mean an estimated value were examples, not an authoritative definition.
 
-September 13 desktop reconciliation: canonical notebook, relative input path, README, ignore rules, and local `main` were present. The suggested script, environment.yml, .env.example, application directories, and normalized schema were not implemented. A desktop scratch notebook existed but was not canonical. Later laptop work added a location schema/import and an untracked backend starter; no environment manifest or reusable import script has been added.
+September 13 desktop reconciliation: canonical notebook, relative input path, README, ignore rules, and local `main` were present. The suggested script, environment.yml, .env.example, application directories, and normalized schema were not implemented. A desktop scratch notebook existed but was not canonical. As of September 18, later laptop work had added a location schema/import and an untracked backend starter. September 20 supersedes that backend/environment status; a reusable import script remains unimplemented.
 
 ## Set up GitHub repo on laptop
 
@@ -103,7 +121,7 @@ Recovered owner decisions and progress:
 - Python troubleshooting corrected `connection_timeout` to `connect_timeout`, disabled GSSAPI encryption negotiation for the configured SSL connection, and selected Psycopg's binary implementation. The certificate error persisted with the binary client; success followed changing `verify-full` to `verify-ca` with the CA certificate retained. The reduced hostname verification was explicitly discussed as a workaround.
 - On September 17, the owner confirmed tuple conversion and successful record uploading. The owner subsequently reported fixing the QGIS connection after mistakenly entering Aiven's full Service URI in QGIS's Service field.
 
-Current-file reconciliation:
+September 18 file reconciliation (historical; see September 20 update above):
 
 - Tracked SQL and import source match the minimal location workflow, with parameterized inserts into `public.sampling_locations` and `ST_GeomFromText(..., 3071)`; this is an SRID assignment, not a coordinate transformation.
 - The expected load is 367 locations. The saved count output is still `(0,)` before insertion; there is no saved post-load count. The owner reported success, but neither this update nor a saved result independently confirms the hosted count.
@@ -117,12 +135,12 @@ Current-file reconciliation:
 
 | Historical statement or proposal | Current evidence / treatment |
 |---|---|
-| Full-stack app and Render deployment | The working deployed application remains predecessor history. This project now has owner-reported Aiven/PostGIS work and a local Django starter, but no implemented PFAS API/frontend. |
+| Full-stack app and Render deployment | The original claim referred to the predecessor. This project now has a tracked PFAS location API and owner-reported Render deployment, but no frontend. |
 | Groundwater-only dashboard / private-well dataset recommendation | Later owner scope broadened to the DNR viewer; current code cleans surface water/fish tissue. Final release scope needs confirmation. |
 | React + TypeScript + Leaflet as the stack | Assistant recommendation, not a completed selection or implementation. |
 | No Git repository / branch `master` | Obsolete setup stages. Current local branch is `main`, tracking `origin/main`. |
-| Named environment example `wi-pfas-dashboard`; laptop pip/`.venv` instructions | Laptop `wi-pfas` is now verified; observed versions differ from the desktop baseline. No portable environment manifest exists. |
-| `WI_PFAS_DATA_DIR` and stored database environment variables | Not implemented. Both input paths are relative; import credentials/CA path are prompted at runtime. `PSYCOPG_IMPL` is set solely to choose the client implementation. |
+| Named environment example `wi-pfas-dashboard`; laptop pip/`.venv` instructions | Local development uses `wi-pfas`; the backend now has a Linux container manifest. Full notebook/cross-machine setup remains incomplete. |
+| `WI_PFAS_DATA_DIR` and stored database environment variables | `WI_PFAS_DATA_DIR` remains unimplemented. The import notebook prompts for credentials/CA path; the Django backend now reads database environment variables. `PSYCOPG_IMPL` selects the client implementation, not credentials. |
 | Cleanup notebook had one saved output | It had one at the earlier review; current cleanup has none. The database notebook retains one pre-insert count result. |
 | 402 surface-water/fish-tissue source features | Local CSV contains 367 rows. Export scope/date and live count were not verified; cause unknown. |
 | No database schema, import, or CSV export | Obsolete. Location DDL/import and a cleanup export exist. Analytical-result database loading and robust validation remain unfinished. |
@@ -132,7 +150,7 @@ Current-file reconciliation:
 | The uploaded layer contains cleaned PFAS measurements | It contains locations only. Measurement import was deferred when the owner narrowed the first load. |
 | QGIS connection success proves correct placement/count | It establishes connection success only; recommended feature/SRID/basemap checks remain unreported. |
 
-The latest inspected tracked revision is `f878cff` (2026-09-17), with pre-existing untracked backend files observed on September 18. Chat suggestions alone do not prove implementation. See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for current implementation, historical execution evidence, and outstanding checks, and [DECISIONS.md](DECISIONS.md) for accepted choices.
+The latest inspected tracked revision is `95cbd8a`, reviewed September 20. The September 18 untracked starter description is historical and superseded by the tracked API/deployment implementation. Chat suggestions alone do not prove implementation. See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for current implementation, historical execution evidence, and outstanding checks, and [DECISIONS.md](DECISIONS.md) for accepted choices.
 
 ## Maintaining this record
 

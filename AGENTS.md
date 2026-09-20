@@ -7,6 +7,8 @@ Before planning substantial work, read [docs/PROJECT_CONTEXT.md](docs/PROJECT_CO
 ## Collaboration and development
 
 - Prefer manageable steps, explanations, syntax help, and debugging guidance during learning discussions. The historical preference is for the owner to write application code; an explicit request to implement or edit authorizes that work.
+- Prefer mamba for package installation when available; explain exceptions before suggesting pip. Container deployment uses micromamba and `backend/environment.yml`.
+- Always identify the terminal, active environment, and working directory for commands. Distinguish VS Code file edits, Miniforge Prompt commands, PowerShell commands, and Python/Django shell input. Default local Python instructions to Miniforge Prompt with `wi-pfas` active.
 - Keep scope focused on the requested learning milestone. Do not scaffold a proposed web stack merely because it appears in historical plans.
 - Inspect Git status first; preserve unrelated edits and ignored local work. Do not commit or push without an explicit request.
 - Keep reusable code outside `z/`; the tracked notebooks in `notebooks/` are canonical for cleaning and location import. Treat raw exports as immutable inputs.
@@ -20,11 +22,13 @@ Before planning substantial work, read [docs/PROJECT_CONTEXT.md](docs/PROJECT_CO
 
 The current workflow uses Python/pandas/NumPy notebooks, SQL table definitions, and Psycopg to load sampling locations into Aiven PostgreSQL/PostGIS. The owner reported successful loading and a working QGIS connection. `sql/create/locations_table.sql` defines `sampling_locations` with the source `objectid` primary key, `geometry(Point, 3071)`, and station name. The measurement table and location/result relationship are still to be designed.
 
-As of 2026-09-18, an untracked `backend/` contains a Django starter (`_crud` project and `api` app), with default SQLite settings and no implemented PFAS models or endpoints. Preserve this local work; its presence does not establish a working backend or an Aiven integration. No frontend, environment manifest, build script, or implemented automated test suite is present. See PROJECT_CONTEXT for current evidence and setup gaps.
+As of the 2026-09-20 review at `95cbd8a`, tracked `backend/` contains a working Django/GeoDjango/DRF location API (`_crud` project, `api` app). The unmanaged `SamplingLocation` model maps the existing PostGIS table; read-only list/detail endpoints output EPSG:4326 GeoJSON from stored EPSG:3071 geometry. The owner reports successful deployment on Render Free, including list/detail and styling checks. Do not describe this as an empty starter.
 
-From the repository root, in the selected Python environment:
+Docker uses micromamba with `backend/environment.yml`, then runs `collectstatic` and Gunicorn. WhiteNoise serves static assets. The earlier tracked `requirements.txt` is unused by Docker. The container manifest includes Linux Gunicorn and is not a complete Windows/notebook recipe. No frontend, measurement API, or implemented automated test suite exists. See [docs/BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for settings and smoke checks. Do not run database migrations/imports as deployment verification; startup does neither.
 
-```powershell
+For the following inspection commands, use Miniforge Prompt with `wi-pfas` active and the repository root as the working directory:
+
+```bat
 python --version
 python -c "import pandas as pd; print(pd.__version__)"
 git status --short --branch

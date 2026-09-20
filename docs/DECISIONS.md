@@ -1,6 +1,6 @@
 # Decisions
 
-Originally compiled 2026-09-13; updated 2026-09-18 against `f878cff`, existing untracked backend files, and all 29 turns of **Database Discussion**. Review dates are not automatically decision dates. Evidence and coverage are recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). Assistant suggestions are not treated as owner-approved architecture.
+Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the backend/deployment conversation. Earlier Database Discussion evidence remains recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). Review dates are not automatically decision dates; assistant proposals are not treated as owner-approved architecture.
 
 ## D01 — Wisconsin PFAS as the project domain
 
@@ -17,7 +17,7 @@ Originally compiled 2026-09-13; updated 2026-09-18 against `f878cff`, existing u
 - **Decision:** Use explanations, manageable steps, syntax help, and debugging guidance by default. Implement directly only when requested.
 - **Rationale:** The owner learns better by personally writing the code.
 - **Alternatives discussed:** Extensive assistant implementation occurred during predecessor deployment; it is not the default for this project.
-- **Consequences:** A planning discussion does not authorize scaffolding. The current request authorizes documentation edits, not database or application changes.
+- **Consequences:** A planning discussion does not authorize scaffolding. Command instructions must name the terminal, environment, and working directory; distinguish VS Code edits from terminal commands and Python shell input.
 - **Evidence:** Plan GIS dashboard project; Data Clean Up; Project Documentation; Database Discussion.
 
 ## D03 — Begin with notebook-based cleanup, then progress to database work
@@ -53,17 +53,17 @@ Originally compiled 2026-09-13; updated 2026-09-18 against `f878cff`, existing u
 - **Observed setup:** The 2026-09-18 laptop metadata check found Python 3.12.14, pandas 3.0.5, NumPy 2.5.3, ipykernel 7.3.0, Psycopg/psycopg-binary 3.3.4, and Django 6.1. The earlier desktop review found Python 3.12.13/pandas 3.0.3.
 - **Rationale known:** The owner preferred Miniforge/mamba based on experience. The database troubleshooting added Psycopg's binary package; the import explicitly selects it.
 - **Alternatives discussed:** Named versus repository-local environment, different Python versions, and a laptop pip/`.venv` recipe that was not established as canonical.
-- **Consequences:** No environment manifest or lockfile pins these observed versions. Verify the chosen interpreter/kernel rather than relying on default shell Python. Do not infer that Django's observed version is a project-wide version policy.
+- **Consequences:** Prefer mamba whenever a suitable package is available; explain pip exceptions. `backend/environment.yml` now specifies container dependencies from conda-forge, including Python 3.12 and Django 6.1. The Docker build uses micromamba with environment name `base`; local development remains `wi-pfas`. The earlier `requirements.txt` is unused by Docker. No transitive lockfile or complete notebook environment recipe exists; do not use the Linux/Gunicorn manifest as an unmodified Windows setup recipe.
 - **Evidence:** Data Clean Up; laptop orientation; Database Discussion; current interpreter/package metadata and notebooks.
 
 ## D07 — Backend, frontend, and application hosting
 
-- **Status:** Database decisions are now established in D09–D10. Django has a local starter; the broader application stack remains open.
-- **Direction:** Build on PostgreSQL/Django/JavaScript experience, with interest in React/TypeScript.
-- **Observed implementation:** Untracked `backend/` contains Django `_crud` and `api` starter files. Settings still use SQLite, `api` is not registered, and PFAS models/views/migrations are absent. This is not a working database-backed API.
-- **Alternatives discussed:** Leaflet/MapLibre, vanilla JavaScript/React/TypeScript, and several table/chart libraries. Django REST Framework and Vite remain assistant proposals.
-- **Consequences:** Do not scaffold or select remaining frameworks from historical suggestions. Database hosting on Aiven does not decide backend/frontend hosting. Render application deployment remains predecessor history. The purpose and next integration step for the local starter need owner direction.
-- **Evidence:** Plan GIS dashboard project; Database Discussion; current untracked backend inspection.
+- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. Frontend choices remain open.
+- **Decision:** Build a read-only location API over the existing Aiven PostGIS table, following the predecessor project's general REST approach. Deploy this project's backend to Render Free.
+- **Observed implementation:** Tracked `_crud` and `api` code, unmanaged location model, GeoJSON serializer, list/detail routes, environment-based PostGIS configuration, and Docker deployment files.
+- **Alternatives discussed:** Aiven as a possible app host; native versus Docker deployment; several frontend/map libraries. React/TypeScript/Vite and Leaflet/MapLibre remain proposals.
+- **Consequences:** Aiven hosts the database; Render hosts Django. No frontend or measurement API is implemented. Do not infer a frontend selection from the backend milestone.
+- **Evidence:** Current backend files and owner's reports of successful Render list/detail/styling checks; details in D13–D14.
 
 ## D08 — Durable context in the repository
 
@@ -89,7 +89,7 @@ Originally compiled 2026-09-13; updated 2026-09-18 against `f878cff`, existing u
 - **Decision:** Load only source OBJECTID, WKT point geometry, and station name into `public.sampling_locations`. Preserve `objectid` as the primary key and use `geometry(Point, 3071)` with a required station name.
 - **Rationale:** Establish a small spatial layer and retain the source ID to link to sampling measurements later. The owner explicitly identified the WKT coordinate system as EPSG:3071.
 - **Alternatives discussed:** Begin with measurement-table design or a more elaborate location/event/result model. The owner redirected the immediate milestone to locations.
-- **Consequences:** `ST_GeomFromText` assigns SRID 3071 without reprojection. A location may link to multiple future measurement rows. This import does not include PFOS/PFOA results, media flags, comments, or PDF links. The primary key is appropriate to the inspected 367-row snapshot; stability across future DNR exports remains unverified. Post-load count/SRID and QGIS placement checks remain to be recorded.
+- **Consequences:** `ST_GeomFromText` assigns SRID 3071 without reprojection. A location may link to multiple future measurement rows. This import does not include PFOS/PFOA results, media flags, comments, or PDF links. The primary key is appropriate to the inspected 367-row snapshot; stability across future DNR exports remains unverified. The owner reported the expected count during backend setup; independent SRID and QGIS placement verification remain unrecorded.
 - **Evidence:** Database Discussion on September 16–17; `sql/create/locations_table.sql`; `notebooks/database import locations.ipynb`.
 
 ## D11 — Define tables in SQL and load locations through a separate Python notebook
@@ -109,3 +109,19 @@ Originally compiled 2026-09-13; updated 2026-09-18 against `f878cff`, existing u
 - **Alternatives discussed:** `verify-full` was the original approach. The chat explicitly recorded that `verify-ca` omits hostname matching; future restoration of stronger verification is unresolved.
 - **Consequences:** Preserve the distinction between the working workaround and a repaired client. SQLTools/Python/QGIS require separate connection configuration. Keep all service/account values and certificate paths out of documentation. No live connection was tested for this update.
 - **Evidence:** September 17 Database Discussion troubleshooting and current import connection cell.
+
+## D13 — Expose existing locations as read-only GeoJSON
+
+- **Status:** Implemented; local and hosted requests reported successful by the owner.
+- **Decision:** Map `sampling_locations` with `managed = False`, retaining `objectid` and stored EPSG:3071 geometry. Serialize geometry as EPSG:4326 using REST Framework GIS. Expose list and detail endpoints through a `ReadOnlyModelViewSet`.
+- **Rationale:** Reuse the manually created and populated location table and provide web-friendly coordinates without rewriting stored geometry.
+- **Consequences:** Django model migrations do not own this table. The API offers no location-write actions, measurement data, or custom filtering yet. API success is not a substitute for validating map placement or measurement semantics.
+- **Evidence:** `backend/api/models.py`, `serializers.py`, `views.py`, and `urls.py`; owner-confirmed record retrieval and hosted checks.
+
+## D14 — Deploy with micromamba, Gunicorn, and WhiteNoise on Render
+
+- **Status:** Deployment files tracked; owner reports successful Render deployment and smoke checks.
+- **Decision:** Use Render's Free Docker web service with `backend` as root/build context. Install conda-forge dependencies from `environment.yml` through micromamba. Run `collectstatic` and then Gunicorn; WhiteNoise serves compressed manifest assets.
+- **Rationale:** Package GDAL/GEOS alongside Django while honoring the owner's mamba preference.
+- **Consequences:** Keep the image entrypoint's environment activation. Supply credentials through Render environment variables and the Aiven CA through a secret file. Linux library paths belong to the image; Windows settings remain local. Startup performs no migration or data import. The earlier pip requirements list is not the deployment dependency source. Free-tier operational limits should be checked in current provider documentation when needed.
+- **Evidence:** Dockerfile, environment manifest, ignore rules, Django settings, and this conversation's deployment reports. The Render dashboard and exact deployed URL were not independently audited. See [BACKEND_SETUP.md](BACKEND_SETUP.md).

@@ -1,12 +1,20 @@
 # Wisconsin PFAS Dashboard
 
-An early-stage Wisconsin PFAS web GIS learning project, progressing from data cleaning to a hosted spatial database.
+A Wisconsin PFAS web GIS learning project with a hosted spatial database and a read-only GeoJSON location API.
 
 ## Current Focus
 
-The first database milestone is loading sampling locations from the Wisconsin DNR Surface Water and Fish Tissue layer into Aiven PostgreSQL/PostGIS. The owner reported successful uploading and a working QGIS connection in **Database Discussion** (September 2026).
+Sampling locations from the Wisconsin DNR Surface Water and Fish Tissue layer are stored in Aiven PostgreSQL/PostGIS and exposed through Django/GeoDjango, Django REST Framework, and REST Framework GIS. The backend is deployed to Render Free using Docker, micromamba, Gunicorn, and WhiteNoise.
 
-The repository contains measurement-cleaning and location-import notebooks plus SQL definitions. The imported layer contains locations, not analytical measurements; measurement-table design and loading remain next steps. An untracked local Django starter exists, but a PFAS API, frontend, and running dashboard are not implemented.
+The owner confirmed successful hosted list/detail requests and browsable API styling in the conversation reviewed on September 20, 2026. This documentation update did not independently query the live service; its public URL has not been recorded.
+
+- `GET /api/locations/` — GeoJSON location collection.
+- `GET /api/locations/<objectid>/` — a single location by its source ID.
+- Stored geometry uses EPSG:3071; API geometry is transformed to EPSG:4326.
+
+The imported layer contains locations, not analytical measurements. Measurement-table design/loading and frontend/map implementation remain open milestones.
+
+See [Backend setup and deployment](docs/BACKEND_SETUP.md) for local commands, environment settings, and Render configuration. The container uses [backend/environment.yml](backend/environment.yml); the older requirements file is not used by Docker.
 
 ## Data
 
@@ -23,10 +31,11 @@ This layer can be brought into QGIS as an ArcGIS REST Service, then exported as 
 - `sql/create/postgis.sql` — enables PostGIS.
 - `sql/create/locations_table.sql` — defines the location table with source `objectid` as primary key and `geometry(Point, 3071)`.
 
-The location notebook writes to the hosted database. Repeating a successful import will conflict with existing primary keys; inspect the table before deciding to run it again. Connection credentials and the CA certificate path are supplied at runtime. Data and environments must be set up separately on each computer; no reproducible environment manifest is committed yet.
+The location notebook writes to the hosted database. Repeating a successful import will conflict with existing primary keys; inspect the table before deciding to run it again. Connection credentials and the CA certificate path are supplied at runtime. Data and local environments must be set up separately on each computer. The backend container has its own dependency manifest; a complete notebook environment recipe remains to be captured.
 
 ## Project guidance
 
+- [Backend setup and deployment](docs/BACKEND_SETUP.md) — local commands, Render configuration, and verification.
 - [Project context](docs/PROJECT_CONTEXT.md) — current implementation, laptop setup, limitations, and next milestones.
 - [Decisions](docs/DECISIONS.md) — accepted choices and open architecture questions.
 - [Chat synthesis](docs/CHAT_SYNTHESIS.md) — historical evidence and review coverage.
