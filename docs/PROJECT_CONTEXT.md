@@ -2,7 +2,7 @@
 
 Updated 2026-09-20 against local `HEAD` `95cbd8a` and the backend/deployment conversation. The working tree was clean before this documentation update; `main` matched the locally recorded `origin/main` without a fetch. Earlier database and notebook evidence is retained from the September 18 review. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for coverage limits.
 
-Frontend orientation later on 2026-09-20 checked the clean checkout at `a473324`, the available related tasks, and the public predecessor's frontend source. The owner now wants to work on the frontend, retaining MapLibre and preferring React/TypeScript. No frontend files or dependencies have been added. This review also confirmed that `.vscode` is ignored and untracked, superseding the earlier configuration-tracking concern.
+Frontend orientation on 2026-09-20 checked `a473324` before frontend implementation. The September 21 milestone review checked a clean checkout at `41c6866`: React/TypeScript/Vite and a first page are now tracked. The owner confirmed successful Render Static Site deployment and a working public URL. The URL itself has not been supplied or independently visited. `.vscode` is ignored and untracked, superseding the earlier configuration-tracking concern.
 
 **Evidence labels:** Confirmed means observed in repository files or directly checked during the stated review. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review. Proposed means suggested but not accepted or implemented. Unresolved means the available evidence does not settle it. This review did not execute either notebook, run SQL, or connect to Aiven.
 
@@ -24,13 +24,21 @@ The reviewed predecessor's `frontend_basic2/components/buttons/buttons2.js` uses
 
 **Owner direction:** Continue with MapLibre; prefer React and TypeScript; manually create frontend source/configuration files where practical. npm dependency installation is compatible with that preference. Review Material UI and alternatives later, focusing on coordinated map/UI data, styling, accessibility, and relevant component licensing.
 
-**Early hosting requirement:** The owner wants free frontend hosting from the first small working page, followed by incremental live updates, to handle deployment early. Proposed host: a Render Static Site alongside the existing Render backend, connected to the same repository with a future `frontend` root and Vite's `dist` output. The host is not yet selected/configured. Deploy the initial page before the full map milestone, then connect the public API and check browser access between the two origins. Current Django settings have no CORS configuration. Free hosting has usage allowances; a static frontend does not prevent the existing free backend from spinning down. See D16 and its provider references.
+**Early hosting milestone:** The owner confirmed deploying the first page to Render Static Sites and checking the public page. Setup instructions used `frontend` as root, `npm ci && npm run build`, `dist` as publish directory, `NODE_VERSION=24.21.0`, and `SKIP_INSTALL_DEPS=true`; dashboard settings were not independently inspected. Next, add the map, connect the public API, and check browser access between the two origins. Current Django settings have no CORS configuration. Free hosting has usage allowances; a static frontend does not prevent the existing free backend from spinning down. See D16 and its provider references.
 
-**Proposed teaching path, not implemented:** A small manually configured Vite frontend; first render a station component, then learn selection state, add MapLibre, fetch the existing location GeoJSON, and coordinate map/list/search through shared state. Keep the MapLibre instance stable and teach setup/cleanup explicitly. Use shared style constants for UI and map colors. Vite, direct MapLibre integration versus a React wrapper, a basemap provider, and the UI library remain proposals/open choices. Start with location fields actually exposed by the API; measurement filters require later data work.
+**Next teaching steps, not implemented:** Add a MapLibre component centered on Wisconsin, then fetch the existing location GeoJSON and coordinate map/list/search through shared state. Keep the MapLibre instance stable and teach setup/cleanup explicitly. Use shared style constants for UI and map colors. Direct MapLibre integration is proposed; the basemap provider and UI library remain open choices. Start with location fields actually exposed by the API; measurement filters require later data work.
 
 ## Current implementation and repository layout
 
-**Confirmed:** The repository contains measurement-cleaning and location-import notebooks, SQL definitions, and a tracked Django/GeoDjango read-only location API with Docker deployment files. **Owner-reported:** The backend is running on Render and reads the existing Aiven database; hosted list/detail requests and browsable API styling passed. No frontend, map renderer, or analytical-measurement API is implemented.
+**Confirmed:** The repository contains measurement-cleaning and location-import notebooks, SQL definitions, a Django/GeoDjango read-only location API with Docker deployment files, and a minimal React/TypeScript/Vite frontend. **Owner-reported:** The backend is running on Render and reads Aiven; the frontend is deployed separately on Render Static Sites. No map renderer, frontend API connection, or analytical-measurement API is implemented.
+
+### First frontend page
+
+Tracked `frontend/` contains `index.html`, `src/main.tsx`, `src/App.tsx`, `vite.config.ts`, `tsconfig.json`, `package.json`, and `package-lock.json`. The HTML loads `main.tsx`, which checks for the root element and renders `App`. The component returns a heading and paragraph. React/React DOM 19.3, TypeScript 7.0.2, Vite 8.3, and the React Vite plugin 6.1.1 are declared; the lockfile records resolved dependencies. Node 24.21.0 was observed in the active Miniforge environment. `node_modules` and `dist` are ignored.
+
+The local production command `npm run build` passed TypeScript checking and Vite bundling during this conversation. An initial sandbox child-process restriction required an approved rerun; it was not an application defect. A `Main.tsx`/`main.tsx` casing mismatch was identified before deployment and the current tracked filename is lowercase. The owner reports both development and public-page checks working. No map or API behavior was tested because neither exists yet.
+
+For frontend commands, use Miniforge Prompt with `wi-pfas` active and `frontend` as working directory: `npm run dev` serves development, `npm run build` checks types and generates `dist`, and `npm run preview` previews that output locally. mamba supplies Node/npm; npm manages JavaScript dependencies. The immediate next exercise is installing MapLibre and adding its map component.
 
 ```text
 AGENTS.md
@@ -118,7 +126,7 @@ Settings read local `.env` values through django-environ and use the PostGIS bac
 
 Render Free is the selected backend hosting tier; Aiven remains the database host. The Render dashboard configuration and public service URL were not independently inspected during this documentation update. The exact public URL has not been supplied in this conversation. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for configuration, commands, and repeatable smoke checks.
 
-**Remaining architecture:** MapLibre is now the owner's map choice, with React/TypeScript the preferred frontend learning direction. Vite, UI/table/chart libraries, and integration details remain proposals or open choices. No frontend is implemented. The measurement schema/import and the earlier multi-model measurement design remain unresolved.
+**Remaining architecture:** React/TypeScript/Vite and the first frontend page are implemented. MapLibre is the owner's map choice but is not installed at the September 21 inspection. UI/table/chart libraries, basemap choice, and map/API integration remain open. The measurement schema/import and the earlier multi-model measurement design remain unresolved.
 
 ## Data, sources, and interpretation
 

@@ -12,7 +12,7 @@ The owner confirmed successful hosted list/detail requests and browsable API sty
 - `GET /api/locations/<objectid>/` — a single location by its source ID.
 - Stored geometry uses EPSG:3071; API geometry is transformed to EPSG:4326.
 
-The imported layer contains locations, not analytical measurements. Measurement-table design/loading and frontend/map implementation remain open milestones.
+The imported layer contains locations, not analytical measurements. A manually created React/TypeScript/Vite frontend now displays the first page; the owner confirmed successful Render Static Site deployment and public-page checks on September 21. MapLibre and frontend/API integration are next. Measurement-table design/loading remains open. See [project context](docs/PROJECT_CONTEXT.md) for frontend commands and verification limits.
 
 See [Backend setup and deployment](docs/BACKEND_SETUP.md) for local commands, environment settings, and Render configuration. The container uses [backend/environment.yml](backend/environment.yml); the older requirements file is not used by Docker.
 

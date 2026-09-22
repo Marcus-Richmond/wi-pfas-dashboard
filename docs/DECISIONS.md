@@ -60,11 +60,11 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 
 ## D07 — Backend, frontend, and application hosting
 
-- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. Frontend direction is now recorded in D15; implementation has not begun.
+- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. The first React/TypeScript/Vite frontend page is implemented; see D15–D16 for frontend progress.
 - **Decision:** Build a read-only location API over the existing Aiven PostGIS table, following the predecessor project's general REST approach. Deploy this project's backend to Render Free.
 - **Observed implementation:** Tracked `_crud` and `api` code, unmanaged location model, GeoJSON serializer, list/detail routes, environment-based PostGIS configuration, and Docker deployment files.
 - **Alternatives discussed:** Aiven as a possible app host; native versus Docker deployment; several frontend/map libraries. Earlier React/TypeScript/Vite and Leaflet/MapLibre proposals are historical; D15 records the owner's later frontend direction.
-- **Consequences:** Aiven hosts the database; Render hosts Django. No frontend or measurement API is implemented. Do not infer a frontend selection from the backend milestone.
+- **Consequences:** Aiven hosts the database; Render hosts Django and a separate frontend static site. No measurement API or frontend map/API connection is implemented. Frontend selections are supported by the later work recorded in D15–D16.
 - **Evidence:** Current backend files and owner's reports of successful Render list/detail/styling checks; details in D13–D14.
 
 ## D08 — Durable context in the repository
@@ -130,18 +130,18 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 
 ## D15 — Begin frontend learning with MapLibre and the preferred React/TypeScript direction
 
-- **Status:** Owner-selected next phase and MapLibre choice; React/TypeScript are the owner's preferred direction. No frontend implementation or dependency installation yet.
+- **Status:** React/TypeScript/Vite and a minimal first page are implemented in the manually created `frontend/`, checked at `41c6866` on September 21. MapLibre remains the owner's map choice; it is not installed yet.
 - **Direction:** Retain MapLibre from the predecessor and learn React/TypeScript through this GIS application. Build on basic JavaScript and Python experience, especially object/dictionary-driven filtering. The owner found Code with Mosh's instruction useful but needs examples tied to web GIS.
 - **Workflow:** The owner prefers to create source/configuration files personally, in small explained steps. A generator is acceptable if manual setup becomes disproportionately tedious. npm can install dependencies without scaffolding source files; generated dependency folders and lockfiles should remain tool-managed.
-- **Assistant proposals:** Manually configure a minimal Vite project, start with station components and selection, then integrate MapLibre and the existing location API. Direct MapLibre integration initially would preserve familiar methods while teaching React setup/cleanup. These are recommendations, not installed or accepted implementation details.
+- **Progress:** The owner manually created the package/configuration files, HTML entry page, React entry point, and `App` component. npm installed React/React DOM and the TypeScript/Vite tools; the production build passed locally. The next proposed exercise is a MapLibre component, followed by the location API and shared selection. Direct MapLibre integration would preserve familiar methods while teaching React setup/cleanup.
 - **UI choice deferred by the owner:** Review Material UI and alternatives when UI work becomes relevant. Coordinate map, list, counts, and later charts through shared application state; use shared style values for map layers and UI. No library automatically supplies this coordination or themes MapLibre's canvas.
 - **Consequences:** Teach component inputs, state, array/object replacement, refs, effects, and types through concrete GIS tasks as needed. Use explicit data fields before designing generic filter frameworks. First exercises must reflect the existing location-only API; no measurement/media filters are available yet.
 - **Evidence:** Current frontend request, repository source at `a473324`, and the reviewed public predecessor files, especially [buttons2.js](https://github.com/Marcus-Richmond/WebGIS_ProjectLocationMap/blob/main/frontend_basic2/components/buttons/buttons2.js).
 
 ## D16 — Deploy the frontend early on free hosting
 
-- **Status:** Explicit owner requirement on 2026-09-20; no frontend hosting service configured yet.
+- **Status:** Owner confirmed successful Render Static Site deployment and public-page checks on September 21. The local production build passed; the dashboard and public URL were not independently inspected.
 - **Decision:** Publish the first small working frontend page and keep deploying incremental progress, addressing deployment during initial setup rather than after completing the dashboard.
-- **Assistant proposal:** Use a Render Static Site alongside the existing Render backend. A manually assembled React/TypeScript/Vite app can build to static files; connect the repository's future `frontend` directory and publish `dist`. Enable deployment from the intended Git branch. Render is a recommendation, not an owner-selected frontend provider.
+- **Setup instructions followed by owner-reported success:** Render Static Site alongside the existing backend; branch `main`, root `frontend`, build `npm ci && npm run build`, output `dist`, auto-deploy on commit, `NODE_VERSION=24.21.0`, and `SKIP_INSTALL_DEPS=true`. Exact dashboard values were not independently audited.
 - **Consequences:** Establish the build and public URL early; verify the deployed page before expanding features. Configure the public API URL and explicit browser cross-origin access when connecting data. The frontend never needs Aiven credentials. Static hosting is free within the provider's applicable allowances; build minutes and bandwidth count toward workspace usage. The existing free backend can still spin down independently of the static site.
 - **Evidence:** Owner follow-up requesting free early hosting; current [Render Static Sites documentation](https://render.com/docs/static-sites), [Render Free documentation](https://render.com/docs/free), and [Vite deployment guide](https://vite.dev/guide/static-deploy.html#render), reviewed 2026-09-20. No account usage, billing settings, or deployment dashboard was inspected.

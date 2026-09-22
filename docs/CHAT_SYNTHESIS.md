@@ -2,6 +2,12 @@
 
 Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Updated again 2026-09-20 against `95cbd8a` and the backend/deployment conversation available in this task. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
 
+## September 21 update: first frontend deployed
+
+Coverage: subsequent turns in this frontend task through the owner's confirmation that the public URL works, reconciled with the clean checkout at `41c6866`. The owner installed Node/npm through mamba, installed React/TypeScript/Vite through npm, and manually wrote the configuration and entry files. `App` displays a heading and paragraph. Local development success was owner-reported; the assistant ran the production build successfully after an approved retry for a sandbox child-process restriction. A filename casing mismatch was identified before deployment and is corrected in tracked `src/main.tsx`.
+
+The owner reported successful Render Static Site deployment and then confirmed the public page works as expected. No public URL was supplied and no dashboard or live-page inspection was performed. Setup instructions and evidence limits are recorded in D16. MapLibre, basemap selection, and frontend/API integration remain the next work; no database operations were run for this milestone.
+
 ## September 20 update: frontend orientation
 
 The current frontend request was reconciled with the clean checkout at `a473324`, current backend models/serialization/routes, README, context/decision/setup records, and ignore rules. No API/database calls, imports, migrations, or application changes were made. The following available task messages were reviewed; this was a targeted review, not a full replay of all historical tool outputs or attachments:
