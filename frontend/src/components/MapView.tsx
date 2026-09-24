@@ -14,13 +14,33 @@ function MapView () {
             return;
         }
 
+        // create maplibre map
         const map = new Map({
             container: container,
-            style: "https://demotiles.maplibre.org/style.json",
+            style: "https://tiles.openfreemap.org/styles/positron",
             center: [-89.5, 44.5],
             zoom: 5.5,
         });
 
+        // once map is loaded, display ready message
+        map.on("load", () => {
+            console.log("Map is ready for sampling locations");
+
+            // add layer source
+            map.addSource("sampling-locations", {
+                type: "geojson",
+                data: "https://wi-pfas-api.onrender.com/api/locations/",
+            });
+
+            // add layer data
+            map.addLayer({
+                id: "sampling-location-points",
+                type: "circle",
+                source: "sampling-locations",
+            });
+        });
+
+        // remove map on close
         return () => {
             map.remove();
         };
