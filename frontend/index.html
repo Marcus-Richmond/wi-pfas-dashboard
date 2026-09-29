@@ -3,25 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MapLibre Basic Map</title>
-    <script src="https://unpkg.com/maplibre-gl@v5.14.0/dist/maplibre-gl.js"></script>
-    <link
-      href="https://unpkg.com/maplibre-gl@v5.14.0/dist/maplibre-gl.css"
-      rel="stylesheet"
-    />
+    <title>WI PFAS</title>
+
+    <!-- stylesheet -->
+    <link rel="stylesheet" href="./css/layout.css" />
     
 </head>
 <body>
-    <div id='map' style='width: 400px; height: 300px;'></div>
-    <script type='module'>
-        import * as maplibregl from 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.mjs';
-
-        const map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://demotiles.maplibre.org/style.json', // stylesheet location
-        center: [-74.5, 40], // starting position [lng, lat]
-        zoom: 9 // starting zoom
-        });
-    </script>
+    <div class="page">
+        <div class="header">Header</div>
+        <div class="sidebar">Sidebar</div>
+        <div class="map">Map</div>
+        <div class="data">Data</div>
+    </div>
 </body>
 </html>

@@ -1,0 +1,83 @@
+/* BOX MODEL */
+/* ------------------------------------------ */
+/* |                 margin                 | */
+/* |   ----------------------------------   | */
+/* |   |             border             |   | */
+/* |   |   --------------------------   |   | */
+/* |   |   |         padding        |   |   | */
+/* |   |   |   ------------------   |   |   | */
+/* |   |   |   |     content    |   |   |   | */
+/* |   |   |   ------------------   |   |   | */
+/* |   |   |                        |   |   | */
+/* |   |   --------------------------   |   | */
+/* |   |                                |   | */
+/* |   ----------------------------------   | */
+/* |                                        | */
+/* ------------------------------------------ */
+
+/* content defined by height and width */
+/* padding adds to content box, does not accept different bg color, syntax: <value> */
+/* border adds to content+padding, syntax: <line-width> || <line-style> || <color> */
+/* margin adds whitespace around content+padding+border, does not accept color, syntax: <value> */
+
+/* FLEXIBLE BOX LAYOUT (FlexBox) */
+/*   used for layout out elements in one direction (row or column = horizontal or vertical)*/
+/*   flex is enabled with display: flex; option */
+/*   default direction is row, but can be changed with flex-direction option */
+
+/* axes */
+/*   flex includes concept of 'axes', the 'main' axis and 'cross' axis */
+/*   main axis goes in same direction as flex-direction */
+/*   cross axis goes perpendicular to main direction */
+
+/* aligning items */
+/*   justify-content = aligns content along main axis */
+/*   align-items = aligns content along cross axis */
+
+/* sizing items */
+/*   flex-basis = the initial size of a flex item */
+/*   flex-grow = the growth factor */
+/*   flex-shrink = the shrink factor */
+/*   flex = shorthand for above three props */
+
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+.page {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 2fr 1fr;
+    grid-template-areas: 
+        "header header"
+        "sidebar map"
+        "sidebar data";
+    gap: 5px;
+    background-color: blue;
+    height: 100%;
+}
+
+.page > div {
+  background-color: white;
+}
+
+.header {
+    grid-area: header;
+    padding: 10px;
+}
+
+.sidebar {
+    grid-area: sidebar;
+    width: 150px;
+}
+
+.map {
+    grid-area: map;
+}
+
+.data {
+    grid-area: data;
+}
