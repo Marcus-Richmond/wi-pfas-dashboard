@@ -5,15 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WI PFAS</title>
 
+    <!-- MapLibre -->
+    <script src="https://unpkg.com/maplibre-gl@v5.14.0/dist/maplibre-gl.js"></script>
+    <link 
+      href="https://unpkg.com/maplibre-gl@v5.14.0/dist/maplibre-gl.css"
+      rel="stylesheet"
+    />
+
     <!-- stylesheet -->
     <link rel="stylesheet" href="./css/layout.css" />
     
+    <!-- scripts -->
+    <script type="module" src="./components/map.js"></script>
 </head>
 <body>
     <div class="page">
         <div class="header">Header</div>
         <div class="sidebar">Sidebar</div>
-        <div class="map">Map</div>
+        <div class="map" id="map"></div>
         <div class="data">Data</div>
     </div>
 </body>

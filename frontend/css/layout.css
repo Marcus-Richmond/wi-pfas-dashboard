@@ -43,8 +43,9 @@
 
 html,
 body {
-  height: 100%;
-  margin: 0;
+    height: 100%;
+    margin: 0;
+    background-color: rgb(91, 91, 91);
 }
 
 .page {
@@ -55,13 +56,13 @@ body {
         "header header"
         "sidebar map"
         "sidebar data";
-    gap: 5px;
-    background-color: blue;
     height: 100%;
+    gap: 5px;
+    margin: 5px;
 }
 
 .page > div {
-  background-color: white;
+    background-color: white;
 }
 
 .header {
