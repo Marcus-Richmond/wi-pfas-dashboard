@@ -1,4 +1,4 @@
-function addLocations(map, apiBaseUrl) {
+export function addLocations(map, apiBaseUrl) {
     map.addSource('locations', {
         type: 'geojson',
         data: `${apiBaseUrl}/locations/`

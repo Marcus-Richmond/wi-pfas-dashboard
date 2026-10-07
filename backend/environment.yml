@@ -14,3 +14,4 @@ dependencies:
   - whitenoise=6.12.0
   - gdal=3.13.3
   - geos=3.14.1
+  - django-cors-headers=4.9.0

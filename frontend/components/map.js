@@ -1,11 +1,9 @@
 // imports
 import * as config from "../config.js";
+import { addLocations } from "./layers/locations.js";
 
 // configure api base URL
 const API_BASE_URL = (config.API_BASE_URL ?? "http://127.0.0.1:8000/api").replace(/\/$/, "");
-
-// create url for locations layer
-export const url_locations = `${API_BASE_URL}/locations/`;
 
 // get maptiler key
 const { MAPTILER_KEY } = config;

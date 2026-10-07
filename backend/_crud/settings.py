@@ -66,8 +66,9 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:4173",
-    "https://wi-pfas-frontend.onrender.com",
     "http://127.0.0.1:5500",
+    "https://wi-pfas-dashboard.onrender.com",
+    "https://wi-pfas-frontend.onrender.com",
 ]
 
 ROOT_URLCONF = '_crud.urls'
