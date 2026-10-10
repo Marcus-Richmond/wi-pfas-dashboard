@@ -41,12 +41,7 @@
 /*   flex = shorthand for above three props */
 
 
-html,
-body {
-    height: 100%;
-    margin: 0;
-    background-color: rgb(91, 91, 91);
-}
+
 
 .page {
     display: grid;

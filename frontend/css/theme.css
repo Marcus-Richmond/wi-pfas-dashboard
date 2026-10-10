@@ -1,0 +1,7 @@
+/* CSS Variables */
+:root {
+    --background: #f4f4f5;
+    --foreground: #18181b;
+
+    --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
