@@ -52,12 +52,9 @@
         "sidebar map"
         "sidebar data";
     height: 100%;
-    gap: 5px;
-    margin: 5px;
-}
-
-.page > div {
-    background-color: white;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    box-sizing: border-box;
 }
 
 .header {
@@ -72,6 +69,7 @@
 
 .map {
     grid-area: map;
+    overflow: hidden;
 }
 
 .data {
