@@ -2,4 +2,21 @@
     background-color: var(--panel-surface);
     border: 1px solid var(--panel-border);
     border-radius: var(--radius-panel);
+    color: var(--panel-foreground);
+}
+
+.panel-title {
+    font-size: 16px;
+    font-weight: var(--weight-title);
+    margin: 0;
+}
+
+.panel-padded {
+    padding: var(--space-md);
+}
+
+.header-title {
+    font-size: 20px;
+    font-weight: var(--weight-title);
+    margin: 0;
 }

@@ -54,12 +54,10 @@
     height: 100%;
     gap: var(--space-md);
     padding: var(--space-md);
-    box-sizing: border-box;
 }
 
 .header {
     grid-area: header;
-    padding: 10px;
 }
 
 .sidebar {

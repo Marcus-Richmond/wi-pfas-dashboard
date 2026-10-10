@@ -1,14 +1,19 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 html,
 body {
     height: 100%;
     margin: 0;
     background-color: var(--background);
-    color: var(--foreground)
+    color: var(--foreground);
 }
 
 body {
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.5;
-    color: var(--font-color);
 }

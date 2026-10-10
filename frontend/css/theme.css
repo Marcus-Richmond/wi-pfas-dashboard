@@ -3,18 +3,20 @@
     
     /* fonts */
     --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-color: #ffffff;
+    --weight-title: 600;
     
     /* colors - page */
     --background: #ffffff;
     --foreground: #000000;
-
+    
     /* colors - components */
     --panel-surface: #2c2d2e;
     --panel-border: #9c9c9c;
+    --panel-foreground: #ffffff;
 
+    /* component features */
     --radius-panel: 12px;
 
     /* spacing */
-    --space-md: 12px;
+    --space-md: 10px;
 }
