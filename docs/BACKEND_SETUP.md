@@ -1,6 +1,6 @@
 # Backend setup and deployment
 
-Recorded 2026-09-20; updated 2026-10-11 from `javascript` at `05b645d`, comparison with `main`/`react` at `4810393`, and frontend/deployment chats. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
+Recorded 2026-09-20; updated 2026-10-11 from `javascript` at `4a6527e` and the backend performance conversation. The earlier same-day review used `05b645d` and compared `main`/`react` at `4810393`. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
 
 ## Architecture and dependency source
 
@@ -12,9 +12,81 @@ The request path is browser/client → Render Gunicorn → Django/GeoDjango/DRF 
 - Database geometry: EPSG:3071. GeoJSON output geometry: EPSG:4326. Serialization does not update stored coordinates.
 - Both frontend versions load the location API. No analytical-measurement API, custom filtering, or custom pagination is implemented.
 
-On `javascript`, the serializer uses `GeometryField(transform=4326)`. Preserved `main`/`react` instead annotate the queryset with PostGIS `Transform("geom", 4326)` and serialize `geom_4326`. The owner chose that optimization after slow React collection requests, but no post-change timing is recorded. Bringing it into JavaScript was explicitly deferred October 6.
+On `javascript` at `4a6527e`, the viewset annotates `geom_4326=Transform("geom", 4326)` and the serializer uses `GeometryField(source="geom_4326", read_only=True)`. This supersedes the October 6 deferral and matches the approach previously preserved on `main`/`react`. The calculated geometry exists on returned objects, not as a stored second column. Shell tests or other callers of this serializer must use the annotated query. The response geometry field remains `geometry` in GeoJSON; the annotation is an internal implementation detail.
 
 `backend/environment.yml` is the Docker dependency source. It specifies the Python/Django/DRF, spatial, PostgreSQL, and serving packages from conda-forge, now including django-cors-headers 4.9.0 on `javascript`. Consult that file for versions; it is not a full transitive lockfile.
+
+## Performance measurements and next experiment
+
+The following October 11 results were reported by the owner, not independently rerun. They describe 367 point features and different measurement conditions; do not combine them into a precise end-to-end speedup ratio.
+
+| Test | First run | Second run | Scope |
+|---|---:|---:|---|
+| Original shell database fetch | 3.350 s | 0.381 s | Fetch all locations; first run can include connection/setup costs |
+| Original shell serialization | 12.893 s | 12.689 s | Includes Python-side transformation and GeoJSON structure construction |
+| Shell fetch plus PostGIS transformation | 2.281 s | 0.488 s | Annotated query; performed after resetting a closed connection |
+| Local browser after code change | 2.5 s | 2.0 s | Reported request durations for the browsable endpoint |
+| Local `?format=json` after code change | 10 ms | 19 ms | Selected request, HTTP status/body, and cache behavior not independently inspected |
+| Hosted after Render rebuild | About 2 s | Not separately recorded | Browser caching disabled; service had become available |
+
+Current implementation: query-time PostGIS transformation, with the serializer reading the annotation. No second geometry column, explicit `CONN_MAX_AGE`/`CONN_HEALTH_CHECKS` override, or response-caching code is present in tracked settings/views. Effective private/deployed settings were not inspected. The latest hosted result is an improvement; near-instant hosted loads have not been demonstrated. The unusually short local JSON timings should be verified before attributing the HTML/JSON difference to rendering alone.
+
+### Next diagnostic exercise (read-only; not yet run)
+
+Use **Miniforge Prompt (Windows cmd.exe)** with the existing `wi-pfas` environment and repository root as the starting directory. Open a new Django shell to load the edited code:
+
+```bat
+mamba activate wi-pfas
+cd backend
+python manage.py shell
+```
+
+Inside the **Django Python shell**, import:
+
+```python
+from time import perf_counter
+from django.db import connection
+from api.views import SamplingLocationViewSet
+from api.serializers import SamplingLocationSerializer
+```
+
+Optionally inspect only the connection lifetime, without displaying credentials:
+
+```python
+print("Connection lifetime:", connection.settings_dict.get("CONN_MAX_AGE", 0))
+```
+
+In this fresh diagnostic shell, close any existing connection before timing a new one:
+
+```python
+connection.close()
+```
+
+Paste each following timing command as one line and press Enter. Do not type the timed statements individually: human typing time would be included.
+
+```python
+start = perf_counter(); connection.ensure_connection(); print("Connection:", round(perf_counter() - start, 3), "seconds")
+```
+
+```python
+start = perf_counter(); locations = list(SamplingLocationViewSet.queryset.all()); print("Fetch and transform:", round(perf_counter() - start, 3), "seconds")
+```
+
+```python
+start = perf_counter(); data = SamplingLocationSerializer(locations, many=True).data; print("Serialization:", round(perf_counter() - start, 3), "seconds")
+```
+
+The viewset supplies the required annotation; `.all()` creates a fresh queryset for each timing. These are reads from Aiven and in-memory serialization, not imports or migrations. Serialization timing excludes final JSON encoding, HTML rendering, and HTTP transfer. Repeat the entire sequence (including `connection.close()`) to compare connection establishment twice; repeat just the last two commands to compare an existing connection. If a connection has closed while idle, reset it before repeating the sequence.
+
+This local exercise can identify a candidate cost but does not measure the Render-to-Aiven network path. Verify hosted improvements through repeated successful JSON responses after the service is awake, with a known deployed commit. In browser developer tools, select the actual `/api/locations/?format=json` request, check HTTP 200, a complete FeatureCollection with 367 features, plausible longitude/latitude coordinates, and record waiting time separately from total duration. Do not time an asset request or Render's wake-up page by mistake.
+
+### Candidate changes after measurement
+
+1. **Connection reuse:** Django defaults to closing the connection after each request (`CONN_MAX_AGE=0`). If setup is a material cost, consider a bounded lifetime such as 60 seconds for Render's Gunicorn/WSGI service, with health checks for stale connections. Configure these at `DATABASES["default"]`, outside `OPTIONS`; keep local threaded development behavior in mind. Each worker thread owns a connection. Django's normal development server creates new threads for requests, so ordinary local refreshes are not a reliable test of persistent-connection gains. No connection-lifetime setting has been changed yet. [Django persistent connections](https://docs.djangoproject.com/en/6.1/ref/databases/#persistent-connections)
+2. **Response caching:** If repeated query/serialization work still matters, cache the public location response for a bounded period and decide when updates invalidate it. Account for JSON/HTML negotiation and CORS when selecting cache keys/headers. Django's local-memory cache is per process and is lost on restart; browser cache disabling does not disable it. No cache backend, endpoint cache, or expiry policy has been selected. [Django caching](https://docs.djangoproject.com/en/6.1/topics/cache/)
+3. **First visit after idle:** Neither database connection reuse nor an in-process response cache avoids waiting for Render Free to wake. If near-instant first-visit display is required, separately evaluate an always-running backend or a deliberately refreshed static GeoJSON snapshot. These remain alternatives, not selected architecture. [Render idle behavior](https://render.com/docs/free#spinning-down-on-idle)
+
+Change one thing at a time, validate the response data, and record before/after timings under matching conditions. Keep the original geometry and existing table intact unless measured evidence justifies a schema change.
 
 ## Browser access (CORS)
 

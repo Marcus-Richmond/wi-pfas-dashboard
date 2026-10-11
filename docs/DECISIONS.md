@@ -2,7 +2,7 @@
 
 Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the backend/deployment conversation. Earlier Database Discussion evidence remains recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). Review dates are not automatically decision dates; assistant proposals are not treated as owner-approved architecture.
 
-Updated again 2026-10-11 against `javascript` at `05b645d`, preserved `main`/`react` at `4810393`, and the Frontend - js, Frontend - react, Branching, and Backend chats. D17–D20 record later choices; D15 retains the earlier React direction with its current status clarified.
+Updated again 2026-10-11 against `javascript` at `05b645d`, preserved `main`/`react` at `4810393`, and the Frontend - js, Frontend - react, Branching, and Backend chats. Later the same day, the backend follow-up at `4a6527e` superseded the transformation deferral in D20. D17–D20 record later choices; D15 retains the earlier React direction with its current status clarified.
 
 Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new owner direction and teaching preferences. Configuration-tracking status in D04 was reconciled with the current checkout and the Documentation task.
 
@@ -151,9 +151,9 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 ## D17 — Preserve React and continue learning with plain JavaScript
 
 - **Status:** Explicit owner choice in Branching, September 24–25; implemented in Git and current source.
-- **Decision:** Keep the React work and restart a `javascript` branch from `caf8414`, immediately before React setup. Current `main`/`react` both point to `4810393`; JavaScript has progressed to `05b645d`.
+- **Decision:** Keep the React work and restart a `javascript` branch from `caf8414`, immediately before React setup. The earlier October 11 review recorded `main`/`react` at `4810393` and JavaScript at `05b645d`; the backend follow-up uses `javascript` at `4a6527e`.
 - **Rationale:** React/TypeScript introduced too much complexity at once. Returning later remains possible but undecided.
-- **Consequences:** Branches cover backend and frontend together. The JavaScript baseline initially omitted later CORS and query-time transformation changes. CORS was reintroduced; the transformation optimization remains absent. Shared ignored folders can survive switching and must not be mistaken for tracked implementation.
+- **Consequences:** Branches cover backend and frontend together. The JavaScript baseline initially omitted later CORS and query-time transformation changes. CORS was reintroduced; the transformation optimization was later added on October 11 at `4a6527e` (D20). Shared ignored folders can survive switching and must not be mistaken for tracked implementation.
 - **Evidence:** Branching owner instructions and confirmation; local Git refs and branch file comparison without a fetch.
 
 ## D18 — Use a small JavaScript deployment build and public browser configuration
@@ -171,10 +171,11 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 - **Consequences:** Current panels/map are implemented; no table/chart library, responsive breakpoint, or search control exists. Next proposed exercise is the labeled search field, followed by styling and behavior in separate owner-written steps.
 - **Evidence:** Frontend - js September planning and October 10 CSS/hint-first requests; current HTML and five stylesheets.
 
-## D20 — Keep backend branch differences explicit
+## D20 — Use measured query-time transformation on JavaScript
 
-- **Status:** Query-time CRS transformation implemented on `main`/`react`; transfer to JavaScript explicitly deferred October 6. CORS implemented on both, with different origin lists.
-- **Choice/history:** During React lessons, the owner chose PostGIS `Transform` after slow collection requests. The serializer reads the query annotation; stored EPSG:3071 geometry is unchanged. JavaScript still uses serializer-side `transform=4326`.
-- **Deployment direction:** The owner requested switching the Render backend to `javascript` to use that branch's CORS origins, then reported hosted locations working. This is not an independent dashboard audit or a measured performance comparison.
-- **Consequences:** Do not claim the optimization is on JavaScript, silently port it, or attribute all latency to Render cold starts. Revisit timing and transformation when the owner chooses that milestone. Both branches intend EPSG:4326 GeoJSON.
-- **Evidence:** Frontend - react performance discussion, Frontend - js October 6 deferral and deployment reports, and current serializers/viewsets/settings on both branches.
+- **Status:** Implemented on `javascript` at `4a6527e`, superseding the October 6 deferral. The same approach was previously preserved on `main`/`react`; CORS origin lists still differ.
+- **Choice/history:** The owner revisited performance after slow hosted requests and repeated local requests over 14 seconds. Shell measurements put most measured time in the old serializer. The owner changed the query to annotate `geom_4326=Transform("geom", 4326)` and the serializer to read `source="geom_4326"`.
+- **Consequences:** Keep stored EPSG:3071 geometry and output EPSG:4326; no second stored geometry column was created. There is no measured need for one at this stage. Direct uses of this serializer must supply objects with the annotation; a plain `SamplingLocation.objects.all()` query is no longer sufficient for the intended geometry output.
+- **Verification:** The owner reported local improvement and approximately two-second hosted loads with browser caching disabled after a Render rebuild. The exact deployed commit and browser traces were not independently inspected. Detailed timings and their limits are in [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment).
+- **Next learning step:** Measure connection establishment, the annotated query, and serialization separately. Connection reuse and response caching are candidates, not implemented decisions. Do not attribute all remaining latency to a single cause or interpret Render startup as query time. Browser cache disabling does not disable a future server-side response cache.
+- **Evidence:** Backend conversation on October 11, current viewset/serializer, and prior branch/deployment history. Near-instant hosted loading remains the owner's objective, not an achieved result.
