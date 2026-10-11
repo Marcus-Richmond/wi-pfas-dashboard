@@ -1,8 +1,8 @@
 # Project context
 
-Updated 2026-09-20 against local `HEAD` `95cbd8a` and the backend/deployment conversation. The working tree was clean before this documentation update; `main` matched the locally recorded `origin/main` without a fetch. Earlier database and notebook evidence is retained from the September 18 review. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for coverage limits.
+Updated 2026-10-11 against clean local `HEAD` `05b645d` on `javascript`, matching locally recorded `origin/javascript` without a fetch. Local `main` and `react` both remain at `4810393`, matching their remote-tracking refs. Earlier database/notebook and laptop-environment findings remain dated evidence, not new execution results. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for chat coverage and limits.
 
-Frontend orientation later on 2026-09-20 checked the clean checkout at `a473324`, the available related tasks, and the public predecessor's frontend source. The owner now wants to work on the frontend, retaining MapLibre and preferring React/TypeScript. No frontend files or dependencies have been added. This review also confirmed that `.vscode` is ignored and untracked, superseding the earlier configuration-tracking concern.
+Since the September 20 documentation baseline, the owner implemented and deployed a React/TypeScript/Vite frontend, then chose plain JavaScript to reduce learning complexity. Both versions are preserved on separate branches. Current JavaScript work has a basemap, sampling-location layer, and styled desktop panels; the owner confirmed hosted locations loading on October 6. `.vscode` remains ignored/untracked; published-history cleanup is recorded in the Documentation task and was not repeated here.
 
 **Evidence labels:** Confirmed means observed in repository files or directly checked during the stated review. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review. Proposed means suggested but not accepted or implemented. Unresolved means the available evidence does not settle it. This review did not execute either notebook, run SQL, or connect to Aiven.
 
@@ -12,25 +12,25 @@ Build a more capable and visually polished Wisconsin DNR PFAS explorer, with fil
 
 The immediate audience is the owner and people reviewing the learning work; eventual public/professional user personas and release scope remain open. Learning objectives include reproducible environmental data cleaning, spatial database design, a backend API and interactive frontend, and professional Git, documentation, environment, and deployment practices.
 
-The owner writes application code with manageable steps, explanations, syntax help, and debugging guidance unless direct implementation is requested. Prefer mamba for package installation when available; explain any pip exception. Every command instruction must identify the terminal, active environment, and working directory. File edits should explicitly name VS Code. In Database Discussion, the owner considered the first layer sufficiently cleaned to move on to database work. Remaining data-quality questions below do not reverse that chosen milestone.
+The owner writes application code unless direct implementation is requested. On October 10 the owner explicitly requested small exercises and syntax/function hints before complete code, followed by review of their attempt. Prefer mamba for package installation when available; explain any pip exception. Every command instruction must identify the terminal, active environment, and working directory. File edits should explicitly name VS Code. In Database Discussion, the owner considered the first layer sufficiently cleaned to move on to database work. Remaining data-quality questions below do not reverse that chosen milestone.
 
 The separate **Project Location Map** remains a predecessor project. Its deployed application is background experience, not evidence of a running PFAS dashboard.
 
 ### Frontend learning direction
 
-The owner knows basic JavaScript and has studied React/TypeScript through Code with Mosh. Teach new concepts through web GIS tasks, using Python dictionaries/lists/functions and existing JavaScript patterns as bridges. Prefer guided exercises, syntax explanations, and small steps that the owner writes and verifies. Introduce types through station properties, component inputs, filter values, and selected location IDs; do not imply that TypeScript validates incoming API data at runtime.
+The owner knows basic JavaScript and has studied React/TypeScript through Code with Mosh. Teach through web GIS tasks, using Python dictionaries/lists/functions and existing JavaScript patterns as bridges. React proved too much at once; the September Branching conversation explicitly chose a JavaScript restart from `caf8414`, preserving React work. A return to React is undecided.
 
 The reviewed predecessor's `frontend_basic2/components/buttons/buttons2.js` uses nested objects, `Object.entries()`, asynchronous API calls, dynamic buttons, and shared filters to update counts and MapLibre styling/data. These are useful foundations. React lessons should distinguish application data/state from DOM element references, and replacement of state objects/arrays from the predecessor's `push`/`splice` mutations.
 
-**Owner direction:** Continue with MapLibre; prefer React and TypeScript; manually create frontend source/configuration files where practical. npm dependency installation is compatible with that preference. Review Material UI and alternatives later, focusing on coordinated map/UI data, styling, accessibility, and relevant component licensing.
+**Current owner direction:** Continue MapLibre with plain HTML/CSS/JavaScript and personally authored source/configuration. Use the owner's CSS for the desktop layout, split by responsibility. shadcn/ui, mapcn, and glasscn provide visual inspiration; their components are not integrated. Tailwind is set aside. Bootstrap was considered and Tabulator/Chart.js are acceptable candidates, not final selections or installed dependencies. Material UI discussion belongs to a possible React return.
 
-**Early hosting requirement:** The owner wants free frontend hosting from the first small working page, followed by incremental live updates, to handle deployment early. Proposed host: a Render Static Site alongside the existing Render backend, connected to the same repository with a future `frontend` root and Vite's `dist` output. The host is not yet selected/configured. Deploy the initial page before the full map milestone, then connect the public API and check browser access between the two origins. Current Django settings have no CORS configuration. Free hosting has usage allowances; a static frontend does not prevent the existing free backend from spinning down. See D16 and its provider references.
+**Early hosting implemented:** Both frontend versions reached Render Static Sites. Current public addresses are [JavaScript frontend](https://wi-pfas-dashboard.onrender.com/), [earlier React frontend](https://wi-pfas-frontend.onrender.com/), and [location API](https://wi-pfas-api.onrender.com/api/locations/). These are historical/owner-reported deployments, not freshly checked uptime. JavaScript uses `node build.mjs` from `frontend`, publishing `dist`; React uses its preserved Vite build. Current Django settings include explicit CORS origins. On October 6 the owner requested using `javascript` for the backend service, then confirmed hosted locations loaded; dashboard settings were not independently audited.
 
-**Proposed teaching path, not implemented:** A small manually configured Vite frontend; first render a station component, then learn selection state, add MapLibre, fetch the existing location GeoJSON, and coordinate map/list/search through shared state. Keep the MapLibre instance stable and teach setup/cleanup explicitly. Use shared style constants for UI and map colors. Vite, direct MapLibre integration versus a React wrapper, a basemap provider, and the UI library remain proposals/open choices. Start with location fields actually exposed by the API; measurement filters require later data work.
+**Where work stopped:** The JavaScript map and locations are implemented. CSS now separates theme values, defaults, grid, reusable panel appearance, and typography. The latest proposed exercise is a labeled sidebar search input, then styling and filtering in separate steps. No input, filtering, shared selection, populated table, chart, or loading/error UI exists yet. Start with fields exposed by the location API; measurement filters require later data work. See [FRONTEND_SETUP.md](FRONTEND_SETUP.md) for files and commands.
 
 ## Current implementation and repository layout
 
-**Confirmed:** The repository contains measurement-cleaning and location-import notebooks, SQL definitions, and a tracked Django/GeoDjango read-only location API with Docker deployment files. **Owner-reported:** The backend is running on Render and reads the existing Aiven database; hosted list/detail requests and browsable API styling passed. No frontend, map renderer, or analytical-measurement API is implemented.
+**Confirmed:** The repository contains measurement-cleaning and location-import notebooks, SQL definitions, a Django/GeoDjango read-only location API with Docker configuration, and the JavaScript frontend below. **Owner-reported:** Hosted backend checks and frontend location display passed. No analytical-measurement API exists. The notebooks and SQL are unchanged from `caf8414`; their detailed findings below remain from earlier reviews.
 
 ```text
 AGENTS.md
@@ -40,6 +40,8 @@ docs/
   PROJECT_CONTEXT.md
   DECISIONS.md
   CHAT_SYNTHESIS.md
+  BACKEND_SETUP.md
+  FRONTEND_SETUP.md
 notebooks/
   Surface Water and Fish Tissue.ipynb
   database import locations.ipynb
@@ -47,7 +49,6 @@ sql/
   create/postgis.sql
   create/locations_table.sql
   test.sql
-WI-PFAS Aiven.session.sql
 backend/                         # tracked Django API and Docker deployment
   _crud/                         # settings and project URLs
   api/                           # location model, serializer, viewset, router
@@ -55,13 +56,21 @@ backend/                         # tracked Django API and Docker deployment
   Dockerfile
   .dockerignore
   requirements.txt               # earlier pip list; Docker does not use it
+frontend/                        # javascript branch; React files differ
+  index.html
+  build.mjs                      # Node copy/config generation
+  components/map.js
+  components/layers/locations.js
+  css/                           # theme/base/layout/components/typography
+  config.js                      # ignored local browser configuration
+  dist/                          # ignored generated deployment output
 data/raw/                        # ignored local CSV input
 data/processed/                  # ignored local CSV outputs
 ```
 
-The laptop does not have the desktop's previously documented `z/` scratch directory or `001.code-workspace`. Those were local desktop artifacts, not clone prerequisites.
+The earlier laptop review did not find the desktop's `z/` scratch directory or `001.code-workspace`. Those are local artifacts, not clone prerequisites. The previously listed Aiven session SQL file is not in the current tracked tree.
 
-Recent commits establish the progression: `7dc5a22` updated cleanup code, `0f4d1bd` added project documentation, `077adbe` added database setup, `fe7bb3a` began database upload work, and `f878cff` recorded the location upload workflow. The earlier documentation's `d6cba73` baseline is historical. The current backend/deployment inspection uses `95cbd8a`.
+Current-history landmarks include `b21b864` (location import work), `b76a9b1` (location upload), `db77f11` (backend start), `95cbd8a` (backend deployment), and `caf8414` (documentation baseline used for the JavaScript branch). Later JavaScript commits add the map/CORS, October 6 deployment build, and October 10–11 CSS work. Older hashes in historical review sections may predate the published-history rewrite; do not treat them as current checkout instructions.
 
 ### Measurement cleaning
 
@@ -108,17 +117,19 @@ The expected input is 367 location records. The owner confirmed successful uploa
 
 **Confirmed in code:** Django project `_crud` registers GeoDjango, Django REST Framework, REST Framework GIS, and `api`. `SamplingLocation` maps the existing `sampling_locations` table with `managed = False`, source `objectid` as primary key, `geom` as `PointField(srid=3071)`, and station name. Django does not manage creation or deletion of this table through model migrations.
 
-`SamplingLocationViewSet` is read-only and orders records by `objectid`. The router exposes `/api/locations/` and `/api/locations/<objectid>/`. `GeoFeatureModelSerializer` returns GeoJSON, transforming geometry to EPSG:4326 for output while the stored geometry remains EPSG:3071. No custom filtering, pagination, measurement endpoint, or frontend integration is configured.
+`SamplingLocationViewSet` is read-only and orders records by `objectid`. The router exposes `/api/locations/` and `/api/locations/<objectid>/`. GeoJSON output uses EPSG:4326 while stored geometry remains EPSG:3071. The frontend loads this API; custom filtering, pagination, and a measurement endpoint remain absent.
 
-Settings read local `.env` values through django-environ and use the PostGIS backend. Database options are `sslmode=verify-ca`, a configured CA file, `connect_timeout=10`, and `gssencmode=disable`. `DEBUG` defaults to false; allowed hosts include Render's supplied hostname. WhiteNoise follows SecurityMiddleware and serves collected assets using compressed manifest storage. `backend/db.sqlite3` remains tracked but is not the configured application database.
+**Branch discrepancy:** On `javascript`, `GeometryField(transform=4326)` transforms during serialization. On `main`/`react`, a PostGIS `Transform("geom", 4326)` query annotation supplies `geom_4326` to the serializer. The React chat recorded slow collection responses and the owner chose the query-time change, but no post-change timing establishes its benefit. On October 6 the owner explicitly deferred bringing that coordinate-performance change into JavaScript. Both approaches intend the same output CRS; neither rewrites stored geometry.
+
+Settings read local `.env` values through django-environ and use the PostGIS backend. Database options are `sslmode=verify-ca`, a configured CA file, `connect_timeout=10`, and `gssencmode=disable`. `DEBUG` defaults to false; allowed hosts include Render's supplied hostname. CorsMiddleware follows SecurityMiddleware and precedes WhiteNoise. The JavaScript branch allows both hosted frontend origins, local Vite ports, and `http://127.0.0.1:5500`. WhiteNoise serves collected assets using compressed manifest storage. `backend/db.sqlite3` remains tracked but is not the configured application database.
 
 **Confirmed deployment configuration:** The Dockerfile uses `mambaorg/micromamba:2.9.0` and the conda-forge packages in `backend/environment.yml`, installing into the container's `base` environment. It specifies Linux GDAL/GEOS library paths. Startup runs `collectstatic`, then Gunicorn with one worker and two threads on `$PORT` (fallback 10000). It does not run migrations or import data. The earlier `requirements.txt` is tracked but unused by this build. The YAML pins direct packages, not the entire transitive environment; no lockfile exists.
 
 **Owner-reported verification:** Local Django checks, spatial-library loading, expected location count, ORM retrieval, and the API worked. WhiteNoise was tested locally with `DEBUG=False`. After pushing deployment files, the owner reported the Render service running and confirmed HTTP 200/data from the hosted location list, expected browsable API styling, and retrieval of a known individual location.
 
-Render Free is the selected backend hosting tier; Aiven remains the database host. The Render dashboard configuration and public service URL were not independently inspected during this documentation update. The exact public URL has not been supplied in this conversation. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for configuration, commands, and repeatable smoke checks.
+Render Free is the recorded backend tier; Aiven remains the database host. The public API URL was supplied in the frontend chat and is linked above. Dashboard configuration, current service state, and billing were not inspected during this update. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for configuration, commands, and repeatable smoke checks.
 
-**Remaining architecture:** MapLibre is now the owner's map choice, with React/TypeScript the preferred frontend learning direction. Vite, UI/table/chart libraries, and integration details remain proposals or open choices. No frontend is implemented. The measurement schema/import and the earlier multi-model measurement design remain unresolved.
+**Frontend implementation:** CDN MapLibre 5.14.0 renders MapTiler's `dataviz-v4-dark` style and location circles. CSS Grid provides a 240px sidebar and flexible map/data regions, with shared dark panel styles and typography. There is no narrow-screen breakpoint. Ignored local `config.js` supplies browser configuration; the Node build generates a separate `dist/config.js` from hosting variables. Neither configuration may contain server secrets. UI/table/chart library choices, measurement schema/import, and coordinated interactions remain unresolved.
 
 ## Data, sources, and interpretation
 
@@ -153,6 +164,8 @@ USGS hydrography remains an owner-proposed context layer; no specific dataset/ve
 
 **Checked locally on 2026-09-18:** The Miniforge environment `wi-pfas` has Python 3.12.14, pandas 3.0.5, NumPy 2.5.3, ipykernel 7.3.0, Psycopg 3.3.4, psycopg-binary 3.3.4, and Django 6.1 according to its interpreter/package metadata. Both notebooks name the `wi-pfas` kernel. These are observed versions, not a committed dependency specification.
 
+**Later owner reports:** Node/npm were successfully installed following mamba instructions during the React lessons, and django-cors-headers was installed for browser access. Current container YAML pins django-cors-headers 4.9.0. October 11 did not recheck local package versions, ignored CSV availability, environment configuration, or private files. A fresh clone still needs its local data/configuration and appropriate runtime; it does not inherit them from Render or another computer.
+
 The September 13 laptop review verified pandas/NumPy/ipykernel imports, VS Code Python/Jupyter extensions, and a matching kernel specification. Its ordinary shell resolved Python to a Windows app alias. The older desktop review instead observed Python 3.12.13/pandas 3.0.3 in `wi-pfas` and a separate default Python 3.14.2. Do not substitute either computer's default interpreter for the selected project environment. The backend now has `environment.yml` for its Linux container and an earlier unused `requirements.txt`. The container manifest is not a complete Windows/notebook environment recipe (it includes Gunicorn); cross-machine notebook setup and a full dependency lock remain open.
 
 **Connection history:** SQLTools worked after the owner manually entered the Aiven CA certificate path. Previously tracked settings contained service-specific connection metadata and a local CA path. The Documentation task records their removal from published history; the frontend orientation at `a473324` confirmed `.vscode` is ignored and untracked. Personal connection settings remain local; their values are deliberately omitted here.
@@ -168,6 +181,8 @@ For later work:
 - Use [BACKEND_SETUP.md](BACKEND_SETUP.md) for local Django commands and Render configuration. Prefer mamba locally; micromamba supplies the container environment. An implemented automated test suite is still absent.
 
 ## Verification and remaining work
+
+**October 11 review:** Inspected current source and local branch differences, and reviewed the related frontend/branching/backend chat history. Updated documentation only. No environment imports, builds, notebook runs, live requests, database operations, or deployments were used as verification. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for coverage limits. Documentation whitespace and local-link checks are the validation for this update.
 
 **Historical execution baseline:** The September 13 desktop documentation review ran the older six-cell cleanup workflow in memory and reported 996 rows, no missing dates/year mismatches, and 98 missing numeric values (93 non-detect text cases, four no-sample cases, and one less-than case). That was a smoke check on an older revision, not scientific validation or a fresh run of current notebooks.
 
@@ -185,10 +200,10 @@ Remaining limitations:
 
 ## Next milestones for owner selection
 
-1. Begin the owner-selected frontend learning phase: MapLibre with the preferred React/TypeScript direction. The proposed first integrated milestone is a station map/list with search and shared selection using the existing location API; establish the minimal tooling and components in manageable steps first.
+1. Continue the JavaScript CSS exercise with a labeled sidebar search input. Review the owner's attempt before adding focus styling and search behavior. The map/deployment foundation is already implemented; no new scaffold is needed.
 2. Design the analytical measurement table and its relationship to `sampling_locations.objectid`, including identity, units, qualifiers, missing-result semantics, and import rerun behavior.
 3. Implement and validate measurement loading in manageable steps while preserving original text and provenance.
 4. Record independent QGIS placement/SRID verification; the reported API checks do not establish spatial correctness or scientific validity.
 5. Improve notebook portability, repeat-import handling, dependency locking, and meaningful automated checks as their scope becomes clear.
 
-Open questions include source interpretation and export provenance, cross-machine notebook setup, QGIS spatial validation, measurement schema, and frontend tooling/UI/integration details. Django/DRF, GeoJSON output in EPSG:4326, Aiven database hosting, and Render Docker backend hosting are established. MapLibre and the React/TypeScript learning direction are recorded above without implying frontend implementation.
+Open questions include source interpretation/provenance, cross-machine notebook setup, spatial validation, measurement schema, table/chart choices, map/list selection and filtering, loading/error feedback, narrow-screen layout, and whether/when to resume React. The PostGIS transformation optimization is preserved on the React branches and explicitly deferred on JavaScript. No performance improvement, live deployed commit, or MapTiler account restrictions were verified in this documentation review.

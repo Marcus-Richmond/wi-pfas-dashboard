@@ -2,6 +2,37 @@
 
 Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Updated again 2026-09-20 against `95cbd8a` and the backend/deployment conversation available in this task. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
 
+## October 11 update: JavaScript frontend, branches, and deployment
+
+Reconciled available related chats with clean `javascript` at `05b645d` and local `main`/`react` at `4810393`. Each matched its locally recorded remote-tracking ref; no fetch was performed. Reviewed tracked frontend files, backend settings/dependencies/serializers/viewsets, ignore rules, branch differences, Git history, and existing documentation. Notebooks and SQL have no changes since `caf8414`; their earlier findings remain historical.
+
+| Current chat title | Task ID | Coverage this update |
+|---|---|---|
+| Frontend - js | `01a0d62d-86cc-7582-8a86-3ad31594e3e9` | Retrieved all 41 turns over 5 pages, reaching the end; detailed review of recent styling/build/deployment turns and targeted excerpts of earlier layout/setup discussion. |
+| Frontend - react | `01a0c0e1-b077-7bc3-8be1-1b4d7b7ba8bb` | Retrieved all 41 turns over 5 pages, reaching the end; reviewed owner reports and relevant response text/excerpts for manual setup, hosting, MapLibre, CORS, and coordinate-performance work. |
+| Branching | `01a0d11f-67d5-7372-bf63-76dbafef8f27` | All 3 returned turns, including the explicit older baseline choice and confirmation. |
+| Backend | `01a0b763-b036-7513-a9b0-77417eb61d69` | Retrieved all 32 turns over 4 pages; latest deployment/documentation turns reviewed in detail and older setup excerpts checked against the existing synthesis. |
+
+This is a targeted documentation review, not a complete replay of every assistant lesson, historical tool result, screenshot, or attachment. Some long response excerpts were bounded. The available chat inventory reported no unavailable sources; other computers' unlisted/deleted chats were not audited. Database and Data had no newer activity in that inventory and were not reread; their established history remains below. No unrelated personal chats were reviewed.
+
+### Recovered progression and owner choices
+
+- **React implementation:** The owner installed Node/npm through the mamba learning workflow and manually assembled React/TypeScript/Vite files. Local build/preview and hosted map success were reported. The public site was `https://wi-pfas-frontend.onrender.com/`; MapView adds location GeoJSON and removes the MapLibre instance during effect cleanup. This supersedes September's “Vite proposed/no frontend” status.
+- **CORS and API:** django-cors-headers was added to Django and its deployment manifest. The owner reported browser HTTP 200, 367 features, and a longitude/latitude coordinate pair. These are reported checks, not comprehensive spatial validation. The public API address was supplied as `https://wi-pfas-api.onrender.com/api/`.
+- **Performance:** The React chat recorded slow collection responses, including an owner-reported 48.48-second waiting time. The owner chose query-time PostGIS transformation; that code exists on `main`/`react`. No subsequent measurement establishes the performance improvement or conclusively isolates the original cause.
+- **Branching:** The owner found React/TypeScript too much at once and explicitly chose plain JavaScript from `caf8414`, before React setup, while preserving the React work. Returning to React remains undecided. Because branches cover all files, this also omitted the later backend CORS/transformation changes initially.
+- **JavaScript implementation:** The owner created a separate Render Static Site at `https://wi-pfas-dashboard.onrender.com/`, added a CSS Grid desktop layout, MapLibre map, MapTiler basemap, and a separate locations module. Current source uses one matching MapLibre CDN JS/CSS version, 5.14.0.
+- **October 6 deployment:** Local CORS was restored and the JavaScript hosted origin added. The owner wrote `build.mjs` to copy files and generate configuration from hosting variables. A failure running `build.mjs` alone was corrected to `node build.mjs`. The owner then requested switching the backend service to `javascript` and reported the hosted location layer working. Actual dashboard settings/deployed commits were not independently checked in this update.
+- **Explicit deferral:** After hosted success, the owner asked to leave coordinate handling aside and continue frontend work. The older serializer transformation remains on JavaScript; do not silently port the preserved optimization.
+- **Visual direction:** The owner wants styling inspired by shadcn/ui, mapcn, and glasscn while learning plain CSS. Tailwind was set aside; Bootstrap considered; Tabulator/Chart.js acceptable candidates if customizable. No UI/table/chart framework was selected and installed.
+- **October 10 coaching and CSS:** The owner requested fewer changes at once, separate CSS files, and hints before complete code. Current source has theme/base/layout/components/typography files, reusable panels, shared spacing/headings, shrinkable grid tracks, and panel overflow. The latest proposed exercise is a labeled sidebar search field. It is not yet in HTML; filtering, table/chart content, loading/error UI, and narrow-screen rearrangement are also absent.
+
+### Reconciliation and limits
+
+The current branch has a functioning map foundation, not an unstarted frontend. Conversely, a `Data` panel heading is not an implemented table, and desktop flexing is not a mobile breakpoint. React/Vite source and query-time transformation are implemented on preserved branches, not in the active JavaScript source. Earlier claims that the public API URL was unknown, Render Static Sites were only proposed, and CORS absent are superseded by this update; dated sections below remain historical records.
+
+No application files, private configuration, credentials, or key values were changed or copied into documentation. No runtime/environment recheck, build, notebook execution, SQL, migration, live service request, deployment, or Git history mutation was performed. Published `.vscode` history cleanup remains the previously recorded completed work; it was not re-audited. Provider pricing/limits, account restrictions, current uptime, and auto-deploy behavior were not freshly verified. Local data and environment versions below remain dated observations.
+
 ## September 20 update: frontend orientation
 
 The current frontend request was reconciled with the clean checkout at `a473324`, current backend models/serialization/routes, README, context/decision/setup records, and ignore rules. No API/database calls, imports, migrations, or application changes were made. The following available task messages were reviewed; this was a targeted review, not a full replay of all historical tool outputs or attachments:

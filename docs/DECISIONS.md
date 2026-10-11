@@ -2,6 +2,8 @@
 
 Originally compiled 2026-09-13; updated 2026-09-20 against `95cbd8a` and the backend/deployment conversation. Earlier Database Discussion evidence remains recorded in [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md). Review dates are not automatically decision dates; assistant proposals are not treated as owner-approved architecture.
 
+Updated again 2026-10-11 against `javascript` at `05b645d`, preserved `main`/`react` at `4810393`, and the Frontend - js, Frontend - react, Branching, and Backend chats. D17–D20 record later choices; D15 retains the earlier React direction with its current status clarified.
+
 Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new owner direction and teaching preferences. Configuration-tracking status in D04 was reconciled with the current checkout and the Documentation task.
 
 ## D01 — Wisconsin PFAS as the project domain
@@ -16,7 +18,7 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 ## D02 — Learn by writing the code
 
 - **Status:** Explicit owner preference, reiterated in Project Documentation and followed in Database Discussion.
-- **Decision:** Use explanations, manageable steps, syntax help, and debugging guidance by default. Implement directly only when requested.
+- **Decision:** Use explanations, manageable steps, syntax help, and debugging guidance by default. On October 10 the owner explicitly requested hints and an opportunity to attempt changes before receiving complete code. Implement directly only when requested.
 - **Rationale:** The owner learns better by personally writing the code.
 - **Alternatives discussed:** Extensive assistant implementation occurred during predecessor deployment; it is not the default for this project.
 - **Consequences:** A planning discussion does not authorize scaffolding. Command instructions must name the terminal, environment, and working directory; distinguish VS Code edits from terminal commands and Python shell input.
@@ -60,11 +62,11 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 
 ## D07 — Backend, frontend, and application hosting
 
-- **Status:** Django/GeoDjango, Django REST Framework, REST Framework GIS, and Render Docker hosting are implemented; hosted operation is owner-reported. Frontend direction is now recorded in D15; implementation has not begun.
+- **Status:** Backend and both branch-specific frontends are implemented; hosted operation is owner-reported. D15 records the earlier React direction; D17–D19 describe current JavaScript work.
 - **Decision:** Build a read-only location API over the existing Aiven PostGIS table, following the predecessor project's general REST approach. Deploy this project's backend to Render Free.
 - **Observed implementation:** Tracked `_crud` and `api` code, unmanaged location model, GeoJSON serializer, list/detail routes, environment-based PostGIS configuration, and Docker deployment files.
 - **Alternatives discussed:** Aiven as a possible app host; native versus Docker deployment; several frontend/map libraries. Earlier React/TypeScript/Vite and Leaflet/MapLibre proposals are historical; D15 records the owner's later frontend direction.
-- **Consequences:** Aiven hosts the database; Render hosts Django. No frontend or measurement API is implemented. Do not infer a frontend selection from the backend milestone.
+- **Consequences:** Aiven hosts the database; Render hosts Django and separate static frontends. No measurement API is implemented. Backend and frontend deployment branches must be considered together for browser access.
 - **Evidence:** Current backend files and owner's reports of successful Render list/detail/styling checks; details in D13–D14.
 
 ## D08 — Durable context in the repository
@@ -126,22 +128,53 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 - **Decision:** Use Render's Free Docker web service with `backend` as root/build context. Install conda-forge dependencies from `environment.yml` through micromamba. Run `collectstatic` and then Gunicorn; WhiteNoise serves compressed manifest assets.
 - **Rationale:** Package GDAL/GEOS alongside Django while honoring the owner's mamba preference.
 - **Consequences:** Keep the image entrypoint's environment activation. Supply credentials through Render environment variables and the Aiven CA through a secret file. Linux library paths belong to the image; Windows settings remain local. Startup performs no migration or data import. The earlier pip requirements list is not the deployment dependency source. Free-tier operational limits should be checked in current provider documentation when needed.
-- **Evidence:** Dockerfile, environment manifest, ignore rules, Django settings, and this conversation's deployment reports. The Render dashboard and exact deployed URL were not independently audited. See [BACKEND_SETUP.md](BACKEND_SETUP.md).
+- **Evidence:** Dockerfile, environment manifest, ignore rules, Django settings, and deployment reports. The API URL was later supplied in Frontend - react; the dashboard was not independently audited. See [BACKEND_SETUP.md](BACKEND_SETUP.md).
 
 ## D15 — Begin frontend learning with MapLibre and the preferred React/TypeScript direction
 
-- **Status:** Owner-selected next phase and MapLibre choice; React/TypeScript are the owner's preferred direction. No frontend implementation or dependency installation yet.
+- **Status:** Historical September 20 direction, subsequently implemented and deployed with React/TypeScript/Vite. Preserved on `main`/`react`; superseded as the active learning path by D17. MapLibre remains selected.
 - **Direction:** Retain MapLibre from the predecessor and learn React/TypeScript through this GIS application. Build on basic JavaScript and Python experience, especially object/dictionary-driven filtering. The owner found Code with Mosh's instruction useful but needs examples tied to web GIS.
 - **Workflow:** The owner prefers to create source/configuration files personally, in small explained steps. A generator is acceptable if manual setup becomes disproportionately tedious. npm can install dependencies without scaffolding source files; generated dependency folders and lockfiles should remain tool-managed.
-- **Assistant proposals:** Manually configure a minimal Vite project, start with station components and selection, then integrate MapLibre and the existing location API. Direct MapLibre integration initially would preserve familiar methods while teaching React setup/cleanup. These are recommendations, not installed or accepted implementation details.
+- **Later implementation:** Manual Vite/TypeScript configuration, npm dependencies, an App and MapView component, explicit MapLibre worker setup, map lifecycle cleanup, and location GeoJSON loading exist on `main`/`react`. Shared station selection and filtering remain proposals, not completed features.
 - **UI choice deferred by the owner:** Review Material UI and alternatives when UI work becomes relevant. Coordinate map, list, counts, and later charts through shared application state; use shared style values for map layers and UI. No library automatically supplies this coordination or themes MapLibre's canvas.
 - **Consequences:** Teach component inputs, state, array/object replacement, refs, effects, and types through concrete GIS tasks as needed. Use explicit data fields before designing generic filter frameworks. First exercises must reflect the existing location-only API; no measurement/media filters are available yet.
 - **Evidence:** Current frontend request, repository source at `a473324`, and the reviewed public predecessor files, especially [buttons2.js](https://github.com/Marcus-Richmond/WebGIS_ProjectLocationMap/blob/main/frontend_basic2/components/buttons/buttons2.js).
 
 ## D16 — Deploy the frontend early on free hosting
 
-- **Status:** Explicit owner requirement on 2026-09-20; no frontend hosting service configured yet.
+- **Status:** Explicit owner requirement on 2026-09-20, subsequently implemented through separate Render Static Sites for React and JavaScript. Both reached owner-reported working hosted maps.
 - **Decision:** Publish the first small working frontend page and keep deploying incremental progress, addressing deployment during initial setup rather than after completing the dashboard.
-- **Assistant proposal:** Use a Render Static Site alongside the existing Render backend. A manually assembled React/TypeScript/Vite app can build to static files; connect the repository's future `frontend` directory and publish `dist`. Enable deployment from the intended Git branch. Render is a recommendation, not an owner-selected frontend provider.
+- **Implemented choice:** Render Static Sites alongside the backend. React uses its Vite build; JavaScript uses `node build.mjs`, with `frontend` as root and `dist` as publish directory. The owner confirmed JavaScript hosted locations on October 6 after build-command and CORS fixes. Current dashboard settings were not independently checked.
 - **Consequences:** Establish the build and public URL early; verify the deployed page before expanding features. Configure the public API URL and explicit browser cross-origin access when connecting data. The frontend never needs Aiven credentials. Static hosting is free within the provider's applicable allowances; build minutes and bandwidth count toward workspace usage. The existing free backend can still spin down independently of the static site.
 - **Evidence:** Owner follow-up requesting free early hosting; current [Render Static Sites documentation](https://render.com/docs/static-sites), [Render Free documentation](https://render.com/docs/free), and [Vite deployment guide](https://vite.dev/guide/static-deploy.html#render), reviewed 2026-09-20. No account usage, billing settings, or deployment dashboard was inspected.
+
+## D17 — Preserve React and continue learning with plain JavaScript
+
+- **Status:** Explicit owner choice in Branching, September 24–25; implemented in Git and current source.
+- **Decision:** Keep the React work and restart a `javascript` branch from `caf8414`, immediately before React setup. Current `main`/`react` both point to `4810393`; JavaScript has progressed to `05b645d`.
+- **Rationale:** React/TypeScript introduced too much complexity at once. Returning later remains possible but undecided.
+- **Consequences:** Branches cover backend and frontend together. The JavaScript baseline initially omitted later CORS and query-time transformation changes. CORS was reintroduced; the transformation optimization remains absent. Shared ignored folders can survive switching and must not be mistaken for tracked implementation.
+- **Evidence:** Branching owner instructions and confirmation; local Git refs and branch file comparison without a fetch.
+
+## D18 — Use a small JavaScript deployment build and public browser configuration
+
+- **Status:** Implemented in JavaScript source; hosted locations owner-confirmed October 6.
+- **Choice:** Use CDN MapLibre 5.14.0, a MapTiler basemap, and a Node built-in file-copy script. Keep local `frontend/config.js` ignored; generate `dist/config.js` from `API_BASE_URL` and `MAPTILER_KEY` during deployment.
+- **Consequences:** No Vite/npm project exists on this branch. The local module is required even though `map.js` has an API-address fallback. Build configuration is visible to browsers and must never contain database credentials. `build.mjs` does not clean stale output. Key restrictions were not audited.
+- **Evidence:** Frontend - js setup/deployment turns, current HTML/modules/build script, and ignore rules. See [FRONTEND_SETUP.md](FRONTEND_SETUP.md).
+
+## D19 — Learn layout and shared styling through the owner's CSS
+
+- **Status:** Owner preference followed by implementation; UI/table/chart library selection remains open.
+- **Choice:** Use CSS Grid for desktop page regions and shared CSS variables/panel classes. Split styling into theme, base, layout, components, and typography files to make it easier to understand. Use shadcn/ui, mapcn, and glasscn as appearance references.
+- **Alternatives:** Bootstrap considered; Tailwind explicitly set aside for now. Tabulator and Chart.js are acceptable candidates if customizable, not final commitments. Material UI was part of the earlier React discussion.
+- **Consequences:** Current panels/map are implemented; no table/chart library, responsive breakpoint, or search control exists. Next proposed exercise is the labeled search field, followed by styling and behavior in separate owner-written steps.
+- **Evidence:** Frontend - js September planning and October 10 CSS/hint-first requests; current HTML and five stylesheets.
+
+## D20 — Keep backend branch differences explicit
+
+- **Status:** Query-time CRS transformation implemented on `main`/`react`; transfer to JavaScript explicitly deferred October 6. CORS implemented on both, with different origin lists.
+- **Choice/history:** During React lessons, the owner chose PostGIS `Transform` after slow collection requests. The serializer reads the query annotation; stored EPSG:3071 geometry is unchanged. JavaScript still uses serializer-side `transform=4326`.
+- **Deployment direction:** The owner requested switching the Render backend to `javascript` to use that branch's CORS origins, then reported hosted locations working. This is not an independent dashboard audit or a measured performance comparison.
+- **Consequences:** Do not claim the optimization is on JavaScript, silently port it, or attribute all latency to Render cold starts. Revisit timing and transformation when the owner chooses that milestone. Both branches intend EPSG:4326 GeoJSON.
+- **Evidence:** Frontend - react performance discussion, Frontend - js October 6 deferral and deployment reports, and current serializers/viewsets/settings on both branches.

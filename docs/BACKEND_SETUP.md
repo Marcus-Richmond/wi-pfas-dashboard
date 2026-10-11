@@ -1,6 +1,6 @@
 # Backend setup and deployment
 
-Recorded 2026-09-20 from backend source at `95cbd8a` and the deployment conversation. The owner reported a working Render deployment and successful hosted list/detail/styling checks. This documentation review did not rebuild the image, inspect the Render dashboard, or contact the database/API. The public service URL has not been supplied.
+Recorded 2026-09-20; updated 2026-10-11 from `javascript` at `05b645d`, comparison with `main`/`react` at `4810393`, and frontend/deployment chats. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
 
 ## Architecture and dependency source
 
@@ -10,9 +10,17 @@ The request path is browser/client → Render Gunicorn → Django/GeoDjango/DRF 
 - Existing table: `sampling_locations`, mapped by an unmanaged Django model. Django model migrations do not create/delete this table.
 - Endpoints: `/api/locations/` and `/api/locations/<objectid>/`, read-only and ordered by source `objectid` for the collection.
 - Database geometry: EPSG:3071. GeoJSON output geometry: EPSG:4326. Serialization does not update stored coordinates.
-- No analytical-measurement API, frontend, custom filtering, or custom pagination is implemented.
+- Both frontend versions load the location API. No analytical-measurement API, custom filtering, or custom pagination is implemented.
 
-`backend/environment.yml` is the Docker dependency source. It lists Python 3.12, Django 6.1, django-environ 0.14.0, DRF 3.18.1, REST Framework GIS 1.3.0, Psycopg 3.3.4, Gunicorn 26.2.0, WhiteNoise 6.12.0, GDAL 3.13.3, and GEOS 3.14.1 from conda-forge. Consult the file for future changes rather than maintaining a second package list here. It is not a full transitive lockfile.
+On `javascript`, the serializer uses `GeometryField(transform=4326)`. Preserved `main`/`react` instead annotate the queryset with PostGIS `Transform("geom", 4326)` and serialize `geom_4326`. The owner chose that optimization after slow React collection requests, but no post-change timing is recorded. Bringing it into JavaScript was explicitly deferred October 6.
+
+`backend/environment.yml` is the Docker dependency source. It specifies the Python/Django/DRF, spatial, PostgreSQL, and serving packages from conda-forge, now including django-cors-headers 4.9.0 on `javascript`. Consult that file for versions; it is not a full transitive lockfile.
+
+## Browser access (CORS)
+
+Current settings register `corsheaders` and put CorsMiddleware after SecurityMiddleware and before WhiteNoise. The `javascript` allowlist contains `http://localhost:5173`, `http://localhost:4173`, `http://127.0.0.1:5500`, `https://wi-pfas-frontend.onrender.com`, and `https://wi-pfas-dashboard.onrender.com`. Use exact origins, without paths/trailing slashes. The preserved `main`/`react` list lacks the JavaScript site and port 5500.
+
+A direct API tab can succeed while a frontend request is blocked. Verify the branch deployed by the backend has the intended origin and dependency, then test from the frontend browser. Frontend hosting/build setup is documented separately in [FRONTEND_SETUP.md](FRONTEND_SETUP.md).
 
 The earlier `backend/requirements.txt` remains tracked but is not read by Docker. Prefer mamba for local packages when available; explain any pip exception. The Linux container uses micromamba's `base` environment; local Windows development uses `wi-pfas`. Do not apply the container manifest unmodified to Windows: Gunicorn runs in the Linux container. The YAML also does not capture all notebook dependencies.
 
@@ -77,7 +85,7 @@ The deployment instructions used the following settings in the **Render web dash
 | Setting | Value |
 |---|---|
 | Repository | `Marcus-Richmond/wi-pfas-dashboard` |
-| Branch | `main` |
+| Branch | Originally `main`; October 6 owner requested `javascript`, then reported frontend success |
 | Service type | Web Service |
 | Runtime | Docker |
 | Root Directory | `backend` |
@@ -113,6 +121,6 @@ Copy the output directly into the appropriate private configuration. Never put t
 
 After deployment, append `/api/locations/` to the service URL shown by Render. Verify HTTP 200/data, normal browsable styling, and a known-record detail request. The owner confirmed all three checks. A new change still needs its own relevant validation; no automated API test suite is implemented.
 
-Do not rerun location imports or table-creation SQL as a deployment check. They affect the populated Aiven database, and the import has no duplicate-handling policy. No measurement import or frontend deployment is included in this setup.
+Do not rerun location imports or table-creation SQL as a deployment check. They affect the populated Aiven database, and the import has no duplicate-handling policy. No measurement import is implemented. The separately deployed frontend uses the same API; current dashboard branch/commit and auto-deploy settings still require checking when diagnosing a new deployment.
 
 Provider references used during setup: [Render Docker](https://render.com/docs/docker), [root-relative paths](https://render.com/docs/monorepo-support#root-relative-settings), [environment variables and secret files](https://render.com/docs/configure-environment-variables#secret-files), [Free tier](https://render.com/docs/free), and [micromamba image activation](https://micromamba-docker.readthedocs.io/en/latest/quick_start.html). Consult current provider documentation before relying on plan limits or changing deployment behavior.
