@@ -3,7 +3,7 @@ from rest_framework_gis.fields import GeometryField
 from .models import SamplingLocation
 
 class SamplingLocationSerializer(GeoFeatureModelSerializer):
-    geom = GeometryField(transform=4326, read_only=True)
+    geom = GeometryField(source="geom_4326", read_only=True)
 
     class Meta:
         model = SamplingLocation
