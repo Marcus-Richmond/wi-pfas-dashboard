@@ -110,6 +110,8 @@ DATABASES["default"].setdefault("OPTIONS", {}).update(
     }
 )
 
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=0)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
