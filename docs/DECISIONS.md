@@ -6,6 +6,8 @@ Updated again 2026-10-11 against `javascript` at `05b645d`, preserved `main`/`re
 
 Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new owner direction and teaching preferences. Configuration-tracking status in D04 was reconciled with the current checkout and the Documentation task.
 
+Updated 2026-10-14 against `javascript` at `d1f3106`. D21–D22 record the subsequent owner-authored connection-reuse and collection-cache changes, local checks, and reported deployment.
+
 ## D01 — Wisconsin PFAS as the project domain
 
 - **Status:** Owner-stated direction; README, notebooks, and SQL confirm work in this domain.
@@ -177,5 +179,24 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 - **Choice/history:** The owner revisited performance after slow hosted requests and repeated local requests over 14 seconds. Shell measurements put most measured time in the old serializer. The owner changed the query to annotate `geom_4326=Transform("geom", 4326)` and the serializer to read `source="geom_4326"`.
 - **Consequences:** Keep stored EPSG:3071 geometry and output EPSG:4326; no second stored geometry column was created. There is no measured need for one at this stage. Direct uses of this serializer must supply objects with the annotation; a plain `SamplingLocation.objects.all()` query is no longer sufficient for the intended geometry output.
 - **Verification:** The owner reported local improvement and approximately two-second hosted loads with browser caching disabled after a Render rebuild. The exact deployed commit and browser traces were not independently inspected. Detailed timings and their limits are in [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment).
-- **Next learning step:** Measure connection establishment, the annotated query, and serialization separately. Connection reuse and response caching are candidates, not implemented decisions. Do not attribute all remaining latency to a single cause or interpret Render startup as query time. Browser cache disabling does not disable a future server-side response cache.
+- **Follow-up:** Connection establishment was measured separately, followed by implementation of connection reuse and response caching (D21–D22). Do not attribute all remaining latency to a single cause or interpret Render startup as query time. Browser cache disabling does not disable the server-side response cache.
 - **Evidence:** Backend conversation on October 11, current viewset/serializer, and prior branch/deployment history. Near-instant hosted loading remains the owner's objective, not an achieved result.
+
+## D21 — Reuse database connections for a bounded lifetime
+
+- **Status:** Implemented in settings at `96ac09d`; owner reported successful Django checks and subsequent hosted timings.
+- **Decision:** Read `CONN_MAX_AGE` from the integer environment variable `DB_CONN_MAX_AGE`, defaulting to 0, and enable `CONN_HEALTH_CHECKS`. The Render exercise sets the variable to 60 seconds. These are keys within `DATABASES["default"]`, not additional database aliases or connection `OPTIONS`.
+- **Rationale:** The owner measured local connection establishment at 2.510 and 1.421 seconds, with a connection lifetime of 0. Reusing a connection can avoid repeating that setup for eligible subsequent requests.
+- **Consequences:** Each Gunicorn worker thread owns its connection. The first use and replacement of an expired/unusable connection still have setup costs. The default keeps ordinary local development unchanged; threaded `runserver` is not a reliable benchmark for persistent-connection gains. This is connection reuse, not query/result caching.
+- **Verification:** Hosted requests after the instructed deployment took 1.71, 1.57, 0.87, 0.90, and 1.24 seconds. These are owner reports from a small sample; actual Render variables and timing traces were not independently audited.
+- **Evidence:** Backend conversation, `backend/_crud/settings.py`, and the settings commit.
+
+## D22 — Cache the location collection response for 60 seconds
+
+- **Status:** Implemented at `d1f3106`; local expiry/repeat checks and commit/push/Render deployment completion are owner-reported. Hosted cache timings are pending.
+- **Decision:** Override `SamplingLocationViewSet.list()` and return `super().list(...)`. Wrap it with `method_decorator(cache_page(60))`, then `method_decorator(vary_on_headers("Accept", "Cookie", "Authorization", "Origin"))` immediately above the method. Keep the query-time geometry transformation.
+- **Rationale:** Avoid repeatedly querying and serializing the same location collection for matching requests. Start with Django's default local-memory cache; no additional package, custom `CACHES` setting, or external service was added.
+- **Consequences:** Cache successful GET/HEAD collection responses, not the detail action. URL/query strings and the listed request headers separate variants. Entries expire 60 seconds after population, independently of connection age; there is no explicit data-change invalidation. The cache is process-local, shared by threads in that process, and lost on restart. Future worker scaling would create separate caches unless the backend changes. Browser cache disabling does not disable this cache; neither cache nor connection reuse eliminates Render wake-up.
+- **Verification:** Initial local timings were 6, 5, and 2 ms. After the instructed wait beyond expiry, the owner reported 2.4 s, then 6 and 5 ms. This is consistent with expiry/rebuild followed by hits; original traces/status/body were not independently inspected. Do not present these as hosted timings or guaranteed first-visit latency.
+- **Next check:** After deployment is Live and the service awake, verify the actual JSON response, feature count, repeated requests within 60 seconds, and another cycle after expiry. Keep the lifetime at 60 seconds for comparison before considering any longer freshness tradeoff.
+- **Evidence:** Current viewset and Backend conversation through October 14. See [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment).

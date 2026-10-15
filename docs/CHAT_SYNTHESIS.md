@@ -2,6 +2,21 @@
 
 Original review: 2026-09-13 for the project then labeled **001**. Updated 2026-09-18 with **Database Discussion**, the earlier laptop orientation in **Project Documentation**, and the current checkout at `f878cff` plus its pre-existing untracked `backend/`. Updated again 2026-09-20 against `95cbd8a` and the backend/deployment conversation available in this task. Chat content is historical evidence; current code and explicit owner statements take precedence over old assistant suggestions.
 
+## October 14 follow-up: connection reuse and response caching
+
+Coverage: the continuation of this Backend conversation through the owner's report of committed/pushed changes and updated Render deployments. Reconciled against clean local `javascript` at `d1f3106`, matching its local remote-tracking ref without a fetch. Commit `96ac09d` adds connection settings; `d1f3106` adds list-response caching. No new inventory/review of other tasks or fresh runtime, API, database, or Render dashboard checks were performed for this documentation update.
+
+- The owner measured local connection establishment alone at 2.510 and 1.421 seconds and reported effective `CONN_MAX_AGE=0`.
+- The owner added environment-controlled connection lifetime and health checks. Initially the settings were placed at the outer `DATABASES` level, then duplicated there after the correct assignments were added, causing an integer `setdefault` error. Removing the misplaced entries resolved it; the owner reported Django checks passing. Source now contains the two settings inside `DATABASES["default"]`.
+- Instructions set `DB_CONN_MAX_AGE=60` on Render while keeping default 0 locally. The owner subsequently reported hosted timings of 1.71, 1.57, 0.87, 0.90, and 1.24 seconds. This small sample suggests improvement, but is not an isolated measurement of connection reuse or an independent audit of the deployed variable.
+- The owner overrode the viewset's `list()` method to delegate to the inherited method, then applied `cache_page(60)` and `vary_on_headers("Accept", "Cookie", "Authorization", "Origin")` through `method_decorator`. That code is confirmed in the cache commit. No detail-action cache, custom `CACHES` configuration, or external cache dependency was added.
+- Local requests with browser caching disabled were reported at 6, 5, and 2 ms. After the instructed wait beyond expiry, the owner reported 2.4 s, then 6 and 5 ms. These are consistent with cache expiry/rebuild followed by hits; the actual browser traces, feature counts, and status/body were not independently inspected in this update.
+- On October 14 the owner reported committing/pushing the changes and updating Render deployments, then requested documentation. No hosted cache-hit/expiry timings have yet been supplied. The earlier hosted connection-reuse figures and local cache results must not be presented as a hosted post-cache benchmark.
+
+Current behavior is query-time transformation plus bounded connection reuse and a 60-second collection-response cache. Cached responses can remain stale until expiry; process restart clears the default local-memory cache. These changes do not eliminate Render wake-up. The remaining backend validation is the hosted JSON cache cycle, with the service awake and the actual data response checked. Full configuration and measurement notes are in [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment).
+
+The current request authorizes documentation edits, not a commit, push, or deployment by the assistant. Earlier dated sections below retain their historical coverage; their statements that caching/reuse were only proposals are superseded by this follow-up.
+
 ## October 11 follow-up: backend performance at `4a6527e`
 
 Coverage: the subsequent performance exchange in this Backend task and current tracked viewset/serializer/settings. The working tree was clean before these documentation edits, on `javascript` matching its local remote-tracking ref. No fresh inventory of other tasks, database/API request, or Render dashboard inspection was performed. Earlier same-day branch findings below are historical where this follow-up supersedes them.

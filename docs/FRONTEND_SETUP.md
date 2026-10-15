@@ -1,12 +1,12 @@
 # Frontend setup and deployment
 
-Frontend reviewed 2026-10-11 at `05b645d` on `javascript`; backend notes updated later that day at `4a6527e`. Source was inspected; no build, server, or live request was run for this documentation update. Hosted success below is owner-reported. Actual Render settings were not audited.
+Frontend reviewed 2026-10-11 at `05b645d` on `javascript`; backend notes updated October 14 at `d1f3106`. Source was inspected; no build, server, or live request was run for this documentation update. Hosted success below is owner-reported. Actual Render settings were not audited.
 
 ## Choose the correct branch workflow
 
 | Branch at review | Frontend | Backend distinction |
 |---|---|---|
-| `javascript` (`4a6527e`) | Plain HTML/CSS/JavaScript modules; CDN MapLibre; Node copy/config build | PostGIS query annotation transforms to EPSG:4326; CORS includes the JavaScript site and local port 5500 |
+| `javascript` (`d1f3106`) | Plain HTML/CSS/JavaScript modules; CDN MapLibre; Node copy/config build | PostGIS transformation, configurable connection reuse, and a 60-second collection cache; CORS includes the JavaScript site and local port 5500 |
 | `main` and `react` (`4810393`) | React/TypeScript/Vite, npm package manifest and lockfile, MapView component | PostGIS query annotation transforms to EPSG:4326; older CORS origin list |
 
 These are local branch and remote-tracking snapshots without a fetch. A branch changes the entire repository, not only `frontend`. The owner chose the older `caf8414` baseline for JavaScript in September, preserving the React work separately. Returning to React is undecided. Ignored configuration, `node_modules`, and `dist` can remain across branch switches; their presence does not establish the active stack. Preserve local work before switching.
@@ -66,4 +66,4 @@ React source, Vite configuration, package manifest/lockfile, and MapLibre integr
 
 Current learning priority is plain JavaScript and the owner's CSS. shadcn/ui, mapcn, and glasscn are appearance references. Bootstrap was considered, Tailwind set aside, and Tabulator/Chart.js acceptable candidates; none is installed here. Material UI remains relevant only to a possible React return.
 
-The latest proposed exercise is a visible label associated with a sidebar `type="search"` input, using `location-search` as the ID. It has not been implemented. Offer hints first; review the owner's attempt, then introduce reusable input styling/focus appearance and filtering as separate steps. The October 6 performance deferral was superseded by the October 11 backend exercise: query-time transformation is now implemented on JavaScript. Remaining latency is being investigated separately; see [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment). The sidebar input remains the next frontend exercise when the owner returns to it.
+The latest proposed exercise is a visible label associated with a sidebar `type="search"` input, using `location-search` as the ID. It has not been implemented. Offer hints first; review the owner's attempt, then introduce reusable input styling/focus appearance and filtering as separate steps. The October 6 performance deferral was superseded by the October 11 backend exercise: query-time transformation is now implemented on JavaScript. Connection reuse and a 60-second collection cache were subsequently implemented; the owner reports redeployment, with hosted cache timings still pending; see [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment). The sidebar input remains the next frontend exercise when the owner returns to it.

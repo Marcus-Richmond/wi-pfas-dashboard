@@ -1,6 +1,6 @@
 # Backend setup and deployment
 
-Recorded 2026-09-20; updated 2026-10-11 from `javascript` at `4a6527e` and the backend performance conversation. The earlier same-day review used `05b645d` and compared `main`/`react` at `4810393`. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
+Recorded 2026-09-20; updated 2026-10-14 from `javascript` at `d1f3106` and the backend performance conversation. Earlier October 11 reviews used `4a6527e` and `05b645d`, with `main`/`react` recorded at `4810393`. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
 
 ## Architecture and dependency source
 
@@ -18,7 +18,7 @@ On `javascript` at `4a6527e`, the viewset annotates `geom_4326=Transform("geom",
 
 ## Performance measurements and next experiment
 
-The following October 11 results were reported by the owner, not independently rerun. They describe 367 point features and different measurement conditions; do not combine them into a precise end-to-end speedup ratio.
+The following results from the October 11–14 performance conversation were reported by the owner, not independently rerun. They describe 367 point features and different measurement conditions; do not combine them into a precise end-to-end speedup ratio.
 
 | Test | First run | Second run | Scope |
 |---|---:|---:|---|
@@ -29,9 +29,63 @@ The following October 11 results were reported by the owner, not independently r
 | Local `?format=json` after code change | 10 ms | 19 ms | Selected request, HTTP status/body, and cache behavior not independently inspected |
 | Hosted after Render rebuild | About 2 s | Not separately recorded | Browser caching disabled; service had become available |
 
-Current implementation: query-time PostGIS transformation, with the serializer reading the annotation. No second geometry column, explicit `CONN_MAX_AGE`/`CONN_HEALTH_CHECKS` override, or response-caching code is present in tracked settings/views. Effective private/deployed settings were not inspected. The latest hosted result is an improvement; near-instant hosted loads have not been demonstrated. The unusually short local JSON timings should be verified before attributing the HTML/JSON difference to rendering alone.
+Later measurements, kept separate from the earlier transformation tests:
 
-### Next diagnostic exercise (read-only; not yet run)
+| Stage | Owner-reported timings | Interpretation and limits |
+|---|---|---|
+| Local connection establishment only, before reuse | 2.510 s; 1.421 s | Effective local `CONN_MAX_AGE` was 0; includes connection setup, not fetching locations |
+| Hosted after the connection-reuse exercise | 1.71, 1.57, 0.87, 0.90, 1.24 s | Browser caching disabled; about 1.26 s average, not an isolated proof of the benefit |
+| Local with collection caching | 6, 5, 2 ms | All requests may already have hit a populated cache |
+| Local after waiting beyond the 60-second cache lifetime | 2.4 s, then 6 and 5 ms | Consistent with an expired entry being rebuilt, then reused |
+| Hosted after collection caching deployed | Not yet reported | Owner reports commit/push and updated Render deployments on October 14 |
+
+Current implementation includes query-time PostGIS transformation, configurable connection reuse with health checks, and a 60-second collection response cache. No second geometry column was added. Source confirms the implementation, while timing results and deployment completion are owner-reported. Private/deployed settings, the exact live commit, and original browser traces were not independently inspected. The earlier 10/19 ms local JSON results do not prove that HTML rendering alone accounted for their difference from browsable requests. Near-instant hosted cache hits remain to be measured.
+
+### Implemented connection reuse
+
+The settings now contain these assignments after the existing database options update:
+
+```python
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=0)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+```
+
+Both settings belong inside the default database configuration, alongside `OPTIONS`. Placing `CONN_MAX_AGE` in the outer `DATABASES` dictionary caused the owner's `'int' object has no attribute 'setdefault'` error: Django interpreted it as a database alias whose configuration was an integer. The owner corrected the nesting and reported `manage.py check` passing.
+
+The Render exercise uses `DB_CONN_MAX_AGE=60`; leaving it unset retains local default 0. This controls connection age, not how long data is cached. The first request on a new connection and later replacements still incur setup costs. Health checks help detect closed connections before reuse. Each worker thread has its own connection; current Gunicorn configuration is one worker with two threads. Ordinary threaded `runserver` creates new request threads and is not a reliable test of persistent-connection gains. [Django persistent connections](https://docs.djangoproject.com/en/6.1/ref/databases/#persistent-connections)
+
+### Implemented collection-response cache
+
+`backend/api/views.py` imports `method_decorator`, `cache_page`, and `vary_on_headers`. The list action wraps its inherited implementation in this order:
+
+```python
+@method_decorator(cache_page(60))
+@method_decorator(vary_on_headers("Accept", "Cookie", "Authorization", "Origin"))
+def list(self, request, *args, **kwargs):
+    return super().list(request, *args, **kwargs)
+```
+
+The outer cache wrapper stores successful GET/HEAD collection responses. The inner wrapper varies them by requested format, cookie/authentication context, and origin; URLs/query strings also distinguish cache entries. Keep this decorator order. Only `list()` is decorated: `/api/locations/<objectid>/` is not covered by this response cache. The viewset still supplies the transformed geometry annotation. [DRF caching guidance](https://www.django-rest-framework.org/api-guide/caching/)
+
+No custom `CACHES` setting or external cache service was added. Django therefore uses its default local-memory cache, which is shared by threads within one process but not between processes. It is cleared on process restart/redeployment and does not survive Render shutdown. A cache miss still performs the underlying query/serialization work. Expiry is 60 seconds from population, not a rolling lifetime extended by each hit. No explicit invalidation on data changes exists, so a populated variant can show older data until it expires. This is an intentional bounded freshness tradeoff, not a second authoritative copy of the dataset. [Django caching](https://docs.djangoproject.com/en/6.1/topics/cache/)
+
+Disabling the browser cache does not disable this server cache. A different header variant or query string can miss even within the lifetime, so compare the same JSON URL and request context. A direct backend tab and the frontend can use different `Origin`/`Accept` variants. The two settings that currently use 60 seconds—connection lifetime and response expiry—are independent.
+
+### Next validation: hosted cache cycle
+
+The owner reports the changes committed/pushed and Render deployments updated. Hosted cache timings have not been supplied. In the **Render browser dashboard**, confirm the backend deployment is Live and contains the cache change. Then use **Firefox**:
+
+1. Open `https://wi-pfas-api.onrender.com/api/locations/?format=json` with Developer Tools → Network open and browser caching disabled.
+2. Let Render finish waking up and the first data response complete. Keep startup time separate from the following requests.
+3. Select the actual locations request and verify HTTP 200, a complete FeatureCollection with 367 features, and longitude/latitude coordinates. Check loading from the frontend too, because its origin can create a separate cache variant.
+4. Reload the same JSON URL three times within 60 seconds, allowing each request to finish; record waiting time and total duration.
+5. Wait at least 65 seconds without another request to the endpoint, then reload once and immediately twice more. Record the expiry/repeat pattern separately from the within-lifetime results.
+
+Expected behavior is a slower miss after expiry followed by faster matching hits. Network travel time remains even on a hit; local 5–6 ms responses are not a hosted guarantee. Neither response caching nor connection reuse removes Render Free's wake-up delay. Keep the lifetime at 60 seconds for this comparison. Any longer lifetime, shared cache service, static GeoJSON snapshot, or always-running hosting remains a future choice.
+
+### Optional diagnostic reference (read-only)
+
+The connection-opening portion was completed by the owner with the results above. These commands remain useful if profiling uncached work again; no new post-change serializer-only timing has been reported. A direct shell serializer call bypasses the list response cache.
 
 Use **Miniforge Prompt (Windows cmd.exe)** with the existing `wi-pfas` environment and repository root as the starting directory. Open a new Django shell to load the edited code:
 
@@ -80,11 +134,9 @@ The viewset supplies the required annotation; `.all()` creates a fresh queryset 
 
 This local exercise can identify a candidate cost but does not measure the Render-to-Aiven network path. Verify hosted improvements through repeated successful JSON responses after the service is awake, with a known deployed commit. In browser developer tools, select the actual `/api/locations/?format=json` request, check HTTP 200, a complete FeatureCollection with 367 features, plausible longitude/latitude coordinates, and record waiting time separately from total duration. Do not time an asset request or Render's wake-up page by mistake.
 
-### Candidate changes after measurement
+### Remaining performance scope
 
-1. **Connection reuse:** Django defaults to closing the connection after each request (`CONN_MAX_AGE=0`). If setup is a material cost, consider a bounded lifetime such as 60 seconds for Render's Gunicorn/WSGI service, with health checks for stale connections. Configure these at `DATABASES["default"]`, outside `OPTIONS`; keep local threaded development behavior in mind. Each worker thread owns a connection. Django's normal development server creates new threads for requests, so ordinary local refreshes are not a reliable test of persistent-connection gains. No connection-lifetime setting has been changed yet. [Django persistent connections](https://docs.djangoproject.com/en/6.1/ref/databases/#persistent-connections)
-2. **Response caching:** If repeated query/serialization work still matters, cache the public location response for a bounded period and decide when updates invalidate it. Account for JSON/HTML negotiation and CORS when selecting cache keys/headers. Django's local-memory cache is per process and is lost on restart; browser cache disabling does not disable it. No cache backend, endpoint cache, or expiry policy has been selected. [Django caching](https://docs.djangoproject.com/en/6.1/topics/cache/)
-3. **First visit after idle:** Neither database connection reuse nor an in-process response cache avoids waiting for Render Free to wake. If near-instant first-visit display is required, separately evaluate an always-running backend or a deliberately refreshed static GeoJSON snapshot. These remain alternatives, not selected architecture. [Render idle behavior](https://render.com/docs/free#spinning-down-on-idle)
+Connection reuse and response caching are now implemented. The immediate gap is hosted cache verification, not adding either feature again. If near-instant first-visit display after idle becomes a requirement, evaluate always-running hosting or a deliberately refreshed static GeoJSON snapshot separately; neither is selected. [Render idle behavior](https://render.com/docs/free#spinning-down-on-idle)
 
 Change one thing at a time, validate the response data, and record before/after timings under matching conditions. Keep the original geometry and existing table intact unless measured evidence justifies a schema change.
 
@@ -110,6 +162,7 @@ Edit files in **VS Code**. Django reads `backend/.env`; keep it and the real CA 
 | `GDAL_LIBRARY_PATH` | Absolute path to `Library/bin/gdal.dll` in the active Miniforge environment when discovery fails |
 | `GEOS_LIBRARY_PATH` | Optional explicit GEOS library path if automatic discovery fails |
 | `PSYCOPG_IMPL` | The existing local workaround uses `binary`, requiring that implementation to be installed; this is not a Render requirement |
+| `DB_CONN_MAX_AGE` | Optional connection lifetime in seconds; defaults to `0` for local development |
 
 Database settings use `django.contrib.gis.db.backends.postgis`. Connection options belong inside `DATABASES["default"]["OPTIONS"]`; current code adds them after parsing the URL. They set `sslmode=verify-ca`, the CA path, a 10-second connection timeout, and `gssencmode=disable`. Certificate verification is retained, but `verify-ca` does not check hostname matching. This is the recorded working workaround, not evidence that the original client issue was resolved.
 
@@ -176,6 +229,7 @@ In **Render → Environment**, configure:
 | `DJANGO_SECRET_KEY` | A new deployment secret, distinct from local development |
 | `DATABASE_URL` | The working Aiven connection URL |
 | `DATABASE_SSLROOTCERT` | `/etc/secrets/aiven-ca.pem` |
+| `DB_CONN_MAX_AGE` | `60` for the connection-reuse experiment |
 
 Add a **Secret File** named `aiven-ca.pem`, containing the full Aiven CA certificate, including its BEGIN/END lines. The path above is a container configuration convention, not a local machine path.
 
