@@ -28,6 +28,9 @@ export const map = new maplibregl.Map({
 });
 
 // load locations layer
-map.on('load', function() {
-    addLocations(map, API_BASE_URL);
+map.on('style.load', () => {
+    // only load locations layer if it is not already loaded
+    if (!map.getSource('locations')) {
+        addLocations(map, API_BASE_URL);
+    }
 })
