@@ -4,15 +4,6 @@
     /* fonts */
     --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --weight-title: 600;
-    
-    /* colors - page */
-    --background: #ffffff;
-    --foreground: #000000;
-    
-    /* colors - components */
-    --panel-surface: #2c2d2e;
-    --panel-border: #9c9c9c;
-    --panel-foreground: #ffffff;
 
     /* component features */
     --radius-panel: 12px;
@@ -20,3 +11,26 @@
     /* spacing */
     --space-md: 10px;
 }
+
+:root[data-theme="dark"], :root {
+    /* colors - page */
+    --background: #1b1b1b;
+    --foreground: #ebe7e7;
+    
+    /* colors - components */
+    --panel-surface: #2c2d2e;
+    --panel-border: #9c9c9c;
+    --panel-foreground: #ffffff;
+}
+
+:root[data-theme="light"] {
+    /* colors - page */
+    --background: #f4f4f5;
+    --foreground: #18181b;
+
+    /* colors - components */
+    --panel-surface: #ffffff;
+    --panel-border: #393939;
+    --panel-foreground: #18181b;
+}
+

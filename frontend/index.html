@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,11 +21,17 @@
     
     <!-- scripts -->
     <script type="module" src="./components/map.js"></script>
+    <script type="module" src="./components/theme.js"></script>
 </head>
 <body>
     <div class="page">
         <div class="header panel panel-padded">
             <h1 class="header-title">Wisconsin PFAS Viewer</h1>
+            <label for="theme-select">Theme</label>
+            <select id="theme-select">
+                <option value="dark" selected>Dark</option>
+                <option value="light">Light</option>
+            </select>
         </div>
         <div class="sidebar panel panel-padded">
             <h2 class="panel-title">Sidebar</h2>
