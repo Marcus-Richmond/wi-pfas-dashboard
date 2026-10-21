@@ -8,6 +8,9 @@ const API_BASE_URL = (config.API_BASE_URL ?? "http://127.0.0.1:8000/api").replac
 // get maptiler key
 const { MAPTILER_KEY } = config;
 
+
+
+// ------------------------------------------------------------------------------------------
 // define basemap
 
 // dataviz dark
@@ -15,7 +18,11 @@ const map_style_dataviz_dark = 'dataviz-v4-dark'
 
 // custom basemap
 // const map_style = '019df9d7-0722-7629-bb66-3ad2ae71c49b'
-const map_style = '019df9ad-d703-7b48-90f6-d5b66ddf36fb'
+// const map_style = '019df9ad-d703-7b48-90f6-d5b66ddf36fb'
+
+// ------------------------------------------------------------------------------------------
+
+
 
 // define maptiler url
 const map_source = `https://api.maptiler.com/maps/${map_style_dataviz_dark}/style.json?key=${MAPTILER_KEY}`

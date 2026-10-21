@@ -9,6 +9,7 @@ const themeSelect = document.getElementById('theme-select')
 const basemapStyles = {
     dark: 'dataviz-v4-dark',
     light: 'dataviz-v4-light',
+    warm: 'dataviz-v4-light'
 }
 
 // add event listener for change

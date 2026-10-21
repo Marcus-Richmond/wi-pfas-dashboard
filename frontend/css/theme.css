@@ -21,16 +21,38 @@
     --panel-surface: #2c2d2e;
     --panel-border: #9c9c9c;
     --panel-foreground: #ffffff;
+
+    /* map layers */
+    --location-fill: #ffffff;
+    --location-outline: #000000;
 }
 
 :root[data-theme="light"] {
     /* colors - page */
     --background: #f4f4f5;
     --foreground: #18181b;
-
+    
     /* colors - components */
     --panel-surface: #ffffff;
     --panel-border: #393939;
     --panel-foreground: #18181b;
+    
+    /* map layers */
+    --location-fill: #232323;
+    --location-outline: #c5c0c0;
 }
 
+:root[data-theme="warm"] {
+    /* colors - page */
+    --background: #f9ddb8;
+    --foreground: #e4532b;
+    
+    /* colors - components */
+    --panel-surface: #f9c9a9;
+    --panel-border: #6b4519;
+    --panel-foreground: #573800;
+    
+    /* map layers */
+    --location-fill: #fd7f00;
+    --location-outline: #351b07;
+}
