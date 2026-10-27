@@ -9,3 +9,12 @@ class SamplingLocation(models.Model):
     class Meta:
         managed = False
         db_table = "sampling_locations"
+
+class PFASsites(models.Model):
+    geom = models.PointField(srid=4326)
+    objectid = models.IntegerField(primary_key=True)
+    sitename = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = "pfas_sites"
