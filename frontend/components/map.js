@@ -1,6 +1,7 @@
 // imports
 import * as config from "../config.js";
 import { addLocations } from "./layers/locations.js";
+import { addPFASsites } from "./layers/PFASsites.js";
 
 // configure api base URL
 const API_BASE_URL = (config.API_BASE_URL ?? "http://127.0.0.1:8000/api").replace(/\/$/, "");
@@ -34,10 +35,14 @@ export const map = new maplibregl.Map({
     zoom: 4.5 // starting zoom
 });
 
-// load locations layer
+// load layers
 map.on('style.load', () => {
-    // only load locations layer if it is not already loaded
+    // only load layers if it is not already loaded
     if (!map.getSource('locations')) {
         addLocations(map, API_BASE_URL);
+    }
+
+    if (!map.getSource('PFASsites')) {
+        addPFASsites(map, API_BASE_URL);
     }
 })
