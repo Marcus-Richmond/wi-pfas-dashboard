@@ -22,6 +22,7 @@
     <!-- scripts -->
     <script type="module" src="./components/map.js"></script>
     <script type="module" src="./components/theme.js"></script>
+    <script type="module" src="./components/sidebar/layer-list.js"></script>
 </head>
 <body>
     <div class="page">
@@ -35,7 +36,19 @@
             </select>
         </div>
         <div class="sidebar panel panel-padded">
-            <h2 class="panel-title">Sidebar</h2>
+            <section>
+                <h2 class="panel-title">Layers</h2>
+                <ul class="layer-list" id="list1">
+                    <li class="layer-row" id="locations">
+                        <input type="checkbox" id="toggle-locations" checked>
+                        <label for="toggle-locations">Sample Locations</label> 
+                    </li>
+                    <li class="layer-row" id="PFASsites">
+                        <input type="checkbox" id="toggle-PFASsites" checked>
+                        <label for="toggle-PFASsites">PFAS Sites</label> 
+                    </li>
+                </ul>
+            </section>
         </div>
         <div class="map panel" id="map"></div>
         <div class="data panel panel-padded">
