@@ -27,3 +27,18 @@
     align-items: center;
     gap: var(--space-md);
 }
+
+.layer-symbol {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.layer-symbol-locations {
+    background: var(--location-fill);
+}
+
+.layer-symbol-pfassites {
+    background: var(--pfassites-fill);
+}

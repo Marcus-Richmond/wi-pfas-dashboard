@@ -25,6 +25,8 @@
     /* map layers */
     --location-fill: #ffffff;
     --location-outline: #000000;
+    --pfassites-fill: #9feef2;
+    --pfassites-outline: #000000;
 }
 
 :root[data-theme="light"] {
@@ -40,6 +42,8 @@
     /* map layers */
     --location-fill: #232323;
     --location-outline: #c5c0c0;
+    --pfassites-fill: #036d72;
+    --pfassites-outline: #c5c0c0;
 }
 
 :root[data-theme="warm"] {
