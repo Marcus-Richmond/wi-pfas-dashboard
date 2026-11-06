@@ -1,12 +1,12 @@
 # Wisconsin PFAS Dashboard
 
-A Wisconsin PFAS web GIS learning project with a hosted spatial database, read-only GeoJSON API, and an interactive sampling-location map.
+A Wisconsin PFAS web GIS learning project with a hosted spatial database, read-only GeoJSON APIs, and an interactive map of sampling locations and PFAS sites.
 
 ## Current Focus
 
-Sampling locations from the Wisconsin DNR Surface Water and Fish Tissue layer are stored in Aiven PostgreSQL/PostGIS and exposed through Django/GeoDjango, Django REST Framework, and REST Framework GIS. The backend is deployed to Render Free using Docker, micromamba, Gunicorn, and WhiteNoise.
+Sampling locations from the Wisconsin DNR Surface Water and Fish Tissue layer and sites from PFAS Sites (Open/Under Investigation) are loaded into Aiven PostgreSQL/PostGIS and exposed through Django/GeoDjango, Django REST Framework, and REST Framework GIS. The recorded backend deployment uses Render Free, Docker, micromamba, Gunicorn, and WhiteNoise.
 
-Frontend reviewed October 11, 2026 at `05b645d`; backend performance notes updated October 14 at `d1f3106` on `javascript`. The active frontend uses plain JavaScript, HTML/CSS, MapLibre, and a MapTiler basemap. A desktop grid contains header, sidebar, map, and data panels; the sidebar and data panel currently contain headings only. React/TypeScript/Vite work is preserved on `main` and `react` at the locally recorded `4810393`.
+Reviewed November 6, 2026 at `1f0794f` on `javascript`, comparing changes since the October 14 documentation commit `d65dbdb`. The plain JavaScript/HTML/CSS frontend now has Dark, Light, and Warm themes, coordinated MapTiler basemaps and overlay colors, and a sidebar with visibility checkboxes and symbol previews for both layers. The data panel still contains only a heading. React/TypeScript/Vite work remains preserved on `main` and `react` at locally recorded `4810393`.
 
 - [JavaScript frontend](https://wi-pfas-dashboard.onrender.com/) — owner reported hosted locations loading on October 6.
 - [Location API](https://wi-pfas-api.onrender.com/api/locations/) — backend list/detail/styling and later frontend access were reported working.
@@ -16,9 +16,10 @@ These are recorded public addresses, not a fresh uptime or Render-dashboard audi
 
 - `GET /api/locations/` — GeoJSON location collection.
 - `GET /api/locations/<objectid>/` — a single location by its source ID.
-- Stored geometry uses EPSG:3071; API geometry is transformed to EPSG:4326.
+- `GET /api/PFASsites/` and `/api/PFASsites/<objectid>/` — PFAS-site GeoJSON; capitalization matters.
+- Sampling locations are stored in EPSG:3071 and transformed at query time; PFAS sites are stored directly in EPSG:4326. Both APIs output EPSG:4326.
 
-The imported layer contains locations, not analytical measurements. Search/filtering, selection, tables/charts, a mobile layout, and measurement-table design/loading remain unfinished. The next proposed frontend learning exercise is a labeled sidebar search field, then styling and behavior in separate steps.
+These layers contain point IDs, names, and geometry, not analytical measurements. The owner deferred search to develop themes and the layer list. Search/filtering, feature selection, tables/charts, layout presets/mobile rearrangement, and measurement loading remain unfinished. The latest exercise is symbol previews: both are present, but their suggested outlines remain absent. Warm currently inherits the dark PFAS-site colors.
 
 See [Backend setup and deployment](docs/BACKEND_SETUP.md) for local commands, environment settings, and Render configuration. The container uses [backend/environment.yml](backend/environment.yml); the older requirements file is not used by Docker.
 
@@ -26,20 +27,24 @@ See [Frontend setup and deployment](docs/FRONTEND_SETUP.md) for the JavaScript w
 
 ## Data
 
-Raw source data is not committed to this repository. To run the notebook, export the Surface Water and Fish Tissue layer from the Wisconsin DNR PFAS viewer and place the CSV at:
+Raw source files are ignored. The PFAS-sites notebook does retain downloaded public records in saved outputs. To run the older CSV-based workflows, export the Surface Water and Fish Tissue layer from the Wisconsin DNR PFAS viewer and place the CSV at:
 
 `data/raw/PFAS Sample Sites - Surface Water and Fish Tissue.csv`
 
 This layer can be brought into QGIS as an ArcGIS REST Service, then exported as CSV.
 
+The PFAS-sites workflow instead queries DNR MapServer layer 1 directly with Requests and GeoPandas. Saved October outputs contain 81 sites and a database count of 81; they are historical snapshots, not current completeness or uptime guarantees. It has no pagination or durable raw-response archive.
+
 ## Notebooks and SQL
 
 - `notebooks/Surface Water and Fish Tissue.ipynb` — reshapes measurements, dates, flags, and comments; exports a cleaned CSV. Its export path is still machine-specific.
 - `notebooks/database import locations.ipynb` — reads location ID, WKT geometry, and station name; inserts them with Psycopg into `public.sampling_locations`.
+- `notebooks/database import pfas sites open.ipynb` — retrieves DNR sites, adapts Shapely points through Psycopg, and inserts/updates `public.pfas_sites` by source ID.
 - `sql/create/postgis.sql` — enables PostGIS.
 - `sql/create/locations_table.sql` — defines the location table with source `objectid` as primary key and `geometry(Point, 3071)`.
+- `sql/create/pfas_sites.sql` — defines PFAS-site geometry in EPSG:4326, source `objectid`, and `sitename`.
 
-The location notebook writes to the hosted database. Repeating a successful import will conflict with existing primary keys; inspect the table before deciding to run it again. Connection credentials and the CA certificate path are supplied at runtime. Data and local environments must be set up separately on each computer. The backend container has its own dependency manifest; a complete notebook environment recipe remains to be captured.
+Both import notebooks write to the hosted database. Sampling-location inserts conflict on repeat IDs; PFAS-site uploads update matching geometry/name and insert new IDs, retaining rows absent from later downloads. Adding fields still requires a table/schema change and matching tuple/SQL edits. Connection credentials and the CA path are supplied at runtime. Local data/environments need separate setup; the container manifest is not a complete notebook recipe.
 
 ## Project guidance
 

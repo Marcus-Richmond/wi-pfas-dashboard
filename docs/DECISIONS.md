@@ -8,6 +8,8 @@ Later frontend orientation on 2026-09-20 checked `a473324`; D15 records the new 
 
 Updated 2026-10-14 against `javascript` at `d1f3106`. D21–D22 record the subsequent owner-authored connection-reuse and collection-cache changes, local checks, and reported deployment.
 
+Updated 2026-11-06 against `javascript` at `1f0794f`, comparing changes since documentation commit `d65dbdb`. D23–D26 record themes, direct PFAS-site retrieval/upsert, the second API, and the layer list. Earlier decisions remain historical where explicitly superseded.
+
 ## D01 — Wisconsin PFAS as the project domain
 
 - **Status:** Owner-stated direction; README, notebooks, and SQL confirm work in this domain.
@@ -170,7 +172,7 @@ Updated 2026-10-14 against `javascript` at `d1f3106`. D21–D22 record the subse
 - **Status:** Owner preference followed by implementation; UI/table/chart library selection remains open.
 - **Choice:** Use CSS Grid for desktop page regions and shared CSS variables/panel classes. Split styling into theme, base, layout, components, and typography files to make it easier to understand. Use shadcn/ui, mapcn, and glasscn as appearance references.
 - **Alternatives:** Bootstrap considered; Tailwind explicitly set aside for now. Tabulator and Chart.js are acceptable candidates if customizable, not final commitments. Material UI was part of the earlier React discussion.
-- **Consequences:** Current panels/map are implemented; no table/chart library, responsive breakpoint, or search control exists. Next proposed exercise is the labeled search field, followed by styling and behavior in separate owner-written steps.
+- **Consequences:** Current panels/map are implemented; no table/chart library, responsive breakpoint, or search control exists. The owner deferred the proposed search exercise on October 14, choosing themes and later the layer list (D23, D26).
 - **Evidence:** Frontend - js September planning and October 10 CSS/hint-first requests; current HTML and five stylesheets.
 
 ## D20 — Use measured query-time transformation on JavaScript
@@ -200,3 +202,39 @@ Updated 2026-10-14 against `javascript` at `d1f3106`. D21–D22 record the subse
 - **Verification:** Initial local timings were 6, 5, and 2 ms. After the instructed wait beyond expiry, the owner reported 2.4 s, then 6 and 5 ms. This is consistent with expiry/rebuild followed by hits; original traces/status/body were not independently inspected. Do not present these as hosted timings or guaranteed first-visit latency.
 - **Next check:** After deployment is Live and the service awake, verify the actual JSON response, feature count, repeated requests within 60 seconds, and another cycle after expiry. Keep the lifetime at 60 seconds for comparison before considering any longer freshness tradeoff.
 - **Evidence:** Current viewset and Backend conversation through October 14. See [BACKEND_SETUP.md](BACKEND_SETUP.md#performance-measurements-and-next-experiment).
+
+## D23 — Coordinate named interface, basemap, and overlay themes
+
+- **Status:** Owner-requested October 14 and implemented; Dark/Light/Warm choices are in current source.
+- **Decision:** Select themes through a labeled dropdown and root `data-theme` attribute. Reuse shared CSS variable names. Dark is the owner's chosen default; Light and Warm share a light MapTiler basemap.
+- **Implementation:** `theme.js` changes CSS state and calls `map.setStyle(..., {diff: false})`. Overlay-add functions run on `style.load`, reading current palette values inside each function. The full reload followed the owner's report that locations disappeared during incremental style switching.
+- **Consequences:** Theme changes can reload data and redraw layers. No theme persistence/system preference is implemented. Warm does not override PFAS-site colors and therefore uses root/dark defaults; whether that is desired remains open. The owner deferred `.trim()` on color reads.
+- **Related proposal:** The owner also asked about movable page components. Predefined CSS Grid layouts were proposed as an initial approach; no selector, draggable/dockable panels, or new responsive layout is implemented.
+- **Evidence:** Frontend - js October 14–17 discussion and current HTML/theme/map/layer modules. The owner reported the basemap updating; this review did not run browser interactions.
+
+## D24 — Retrieve and upsert a minimal PFAS-sites layer directly
+
+- **Status:** Owner-selected October 24–26; notebook/SQL implemented, upload reported, saved database count 81.
+- **Decision:** Query DNR MapServer layer 1, PFAS Sites (Open/Under Investigation), directly with Requests; request GeoJSON geometry in EPSG:4326 and create a GeoPandas GeoDataFrame. Upload only geometry, `OBJECTID`, and `SITENAME` for now.
+- **Rationale:** Avoid an intermediate CSV for a layer needing little cleaning and practice direct service access in small owner-written steps.
+- **Implementation:** `pfas_sites` stores `geometry(Point, 4326)` with source `objectid` primary key and required name. Psycopg's Shapely adapter is registered on the connection; parameterized `ST_SetSRID` assigns 4326 to already transformed geometry. New IDs insert; conflicts update geometry/name using `EXCLUDED` values. Commit/rollback is explicit.
+- **Alternatives:** WKT conversion was suggested but the owner requested direct Shapely adaptation and implemented it. Exact replacement/deletion was discussed, not chosen or coded. Adding future columns requires coordinated schema, tuple, insert, and conflict-clause changes.
+- **Consequences:** Unlike the sampling-location importer, reruns update matching IDs. Rows absent from later downloads remain, so the table is not guaranteed to mirror currently open sites. No deletion/refresh policy, source-ID stability guarantee, pagination, scheduled ingestion, or raw-response archive exists. Counts and the 2,000-record service limit are saved October observations, not current guarantees. Source status/media/URLs are downloaded but not imported.
+- **Evidence:** Database, GIS - pfas sites; new import notebook and `sql/create/pfas_sites.sql`. QGIS vector-source loading was reported working; final imported-table spatial validation was only suggested.
+
+## D25 — Expose the second point layer through its own read-only API
+
+- **Status:** Owner-written model/serializer/viewset/route implemented October 26 at `d3bc7c4`; current frontend consumes the route. Live endpoint checks/deployment for this addition remain unconfirmed in reviewed messages.
+- **Decision:** Map existing `pfas_sites` with `managed=False`, output its stored EPSG:4326 geometry directly, and expose ID/name/geometry in GeoJSON. No new stored geometry or relation to sampling locations is required or implemented.
+- **Implementation:** `PFASsitesViewSet` is read-only, ordered by `objectid`, with the same 60-second list cache and Accept/Cookie/Authorization/Origin variants as sampling locations. Details are not decorated. Actual route is `/api/PFASsites/`, with detail by source ID.
+- **Consequences:** Preserve route capitalization in clients. Lowercase URLs, conventional class renaming, and explicit imports were cleanup suggestions; current wildcard imports and names remain. No measurement values or filtering are provided. Old sampling performance measurements do not establish timings for this endpoint.
+- **Evidence:** Backend's two October 26 turns; current API files and frontend `PFASsites.js`.
+
+## D26 — Build the sidebar layer list incrementally
+
+- **Status:** Owner-selected November 4; independent checkbox behavior reported working November 5. Current source includes previews for both overlays.
+- **Decision:** Keep overlay creation in the layer modules and sidebar interaction in `components/sidebar/layer-list.js`. Start with simple labeled HTML rows, then add visibility and symbols in manageable steps. The owner explicitly retained `Object.entries()` rather than the suggested `for...of` cleanup.
+- **Implementation:** Each row ID matches a map layer ID; checkbox IDs use `toggle-` plus that ID. The per-row callback checks layer existence and maps `.checked` to `visible`/`none`. It runs on checkbox `change` and after `style.load` so choices are reapplied after overlay recreation. These toggles hide rendering rather than filter records.
+- **Current boundary:** Rows are static HTML, not generated from a metadata array. CSS preview spans share map fill variables and are hidden from assistive technology; suggested outline borders are missing. The code already adds both previews although the last chat exercise covered only Sample Locations. No persistent visibility, info/zoom buttons, icons, expandable legend, or grouped-layer control exists.
+- **Next learning step:** Review previews across themes and finish their intended outlines before choosing another feature. Search remains deferred; no application change is authorized merely by this documentation update.
+- **Evidence:** Frontend - js November 4–5 messages, `index.html`, layer-list module, and component CSS.

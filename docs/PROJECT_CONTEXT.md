@@ -1,10 +1,10 @@
 # Project context
 
-Updated 2026-10-14 against clean local `HEAD` `d1f3106` on `javascript`, matching locally recorded `origin/javascript` without a fetch. This follow-up records connection reuse (`96ac09d`) and collection-response caching (`d1f3106`); the earlier October 11 frontend review used `05b645d`, with `main`/`react` recorded at `4810393`. Earlier database/notebook and laptop-environment findings remain dated evidence, not new execution results. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for chat coverage and limits.
+Updated 2026-11-06 against clean local `HEAD` `1f0794f` on `javascript`, matching locally recorded `origin/javascript` without a fetch. Compared all changes since the last documentation commit `d65dbdb` (October 14): 14 application/notebook/SQL files changed across 10 commits. Local `main`/`react` remain at `4810393`. Earlier laptop-environment and performance findings remain dated evidence, not new execution results. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for chat coverage and limits.
 
-Since the September 20 documentation baseline, the owner implemented and deployed a React/TypeScript/Vite frontend, then chose plain JavaScript to reduce learning complexity. Both versions are preserved on separate branches. Current JavaScript work has a basemap, sampling-location layer, and styled desktop panels; the owner confirmed hosted locations loading on October 6. `.vscode` remains ignored/untracked; published-history cleanup is recorded in the Documentation task and was not repeated here.
+The active JavaScript version now has theme/basemap switching, two point overlays, and a sidebar with visibility controls and symbol previews. A new notebook retrieves PFAS Sites (Open/Under Investigation) directly from DNR and upserts selected fields into PostGIS; a second read-only API exposes that table. Earlier React/TypeScript/Vite work remains preserved separately. `.vscode` remains ignored/untracked; published-history cleanup was not repeated here.
 
-**Evidence labels:** Confirmed means observed in repository files or directly checked during the stated review. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review. Proposed means suggested but not accepted or implemented. Unresolved means the available evidence does not settle it. This review did not execute either notebook, run SQL, or connect to Aiven.
+**Evidence labels:** Confirmed means observed in repository files or directly checked during the stated review. Owner-reported means the owner described successful work in chat; it is not a fresh database verification. Historical means evidence from an earlier review or saved notebook output. Proposed means suggested but not accepted or implemented. Unresolved means the evidence does not settle it. This review did not execute any notebook, run SQL, contact DNR, or connect to Aiven.
 
 ## Purpose and learning objectives
 
@@ -26,11 +26,11 @@ The reviewed predecessor's `frontend_basic2/components/buttons/buttons2.js` uses
 
 **Early hosting implemented:** Both frontend versions reached Render Static Sites. Current public addresses are [JavaScript frontend](https://wi-pfas-dashboard.onrender.com/), [earlier React frontend](https://wi-pfas-frontend.onrender.com/), and [location API](https://wi-pfas-api.onrender.com/api/locations/). These are historical/owner-reported deployments, not freshly checked uptime. JavaScript uses `node build.mjs` from `frontend`, publishing `dist`; React uses its preserved Vite build. Current Django settings include explicit CORS origins. On October 6 the owner requested using `javascript` for the backend service, then confirmed hosted locations loaded; dashboard settings were not independently audited.
 
-**Frontend stopping point:** The JavaScript map and locations are implemented. CSS now separates theme values, defaults, grid, reusable panel appearance, and typography. The latest proposed exercise is a labeled sidebar search input, then styling and filtering in separate steps. No input, filtering, shared selection, populated table, chart, or loading/error UI exists yet. Start with fields exposed by the location API; measurement filters require later data work. See [FRONTEND_SETUP.md](FRONTEND_SETUP.md) for files and commands.
+**Frontend stopping point:** The owner deferred search on October 14 to work on themes, then chose the layer list on November 4. Dark/Light/Warm palettes, basemap switching, two overlays, visibility controls, and two symbol previews are now implemented. The owner reported checkboxes working and chose to retain `Object.entries()`. Latest code goes beyond the last chat's single-preview exercise: both previews exist, but the suggested outline borders are absent. No search, feature selection, populated table/chart, or loading/error UI exists. Panel-layout presets were discussed but not implemented. See [FRONTEND_SETUP.md](FRONTEND_SETUP.md).
 
 ## Current implementation and repository layout
 
-**Confirmed:** The repository contains measurement-cleaning and location-import notebooks, SQL definitions, a Django/GeoDjango read-only location API with Docker configuration, and the JavaScript frontend below. **Owner-reported:** Hosted backend checks and frontend location display passed. No analytical-measurement API exists. The notebooks and SQL are unchanged from `caf8414`; their detailed findings below remain from earlier reviews.
+**Confirmed:** Three notebooks cover measurement cleaning, sampling-location import, and direct PFAS-sites retrieval/import. Two table definitions and read-only APIs support the frontend overlays. The two older notebooks and their SQL are unchanged since the prior documentation baseline; a new PFAS-sites notebook/DDL/API is added. No analytical-measurement API exists. Earlier hosted sampling checks remain owner-reported; the new site API's live deployment and detail/count checks were not established in the reviewed chats.
 
 ```text
 AGENTS.md
@@ -45,9 +45,11 @@ docs/
 notebooks/
   Surface Water and Fish Tissue.ipynb
   database import locations.ipynb
+  database import pfas sites open.ipynb
 sql/
   create/postgis.sql
   create/locations_table.sql
+  create/pfas_sites.sql
   test.sql
 backend/                         # tracked Django API and Docker deployment
   _crud/                         # settings and project URLs
@@ -60,7 +62,10 @@ frontend/                        # javascript branch; React files differ
   index.html
   build.mjs                      # Node copy/config generation
   components/map.js
+  components/theme.js
   components/layers/locations.js
+  components/layers/PFASsites.js
+  components/sidebar/layer-list.js
   css/                           # theme/base/layout/components/typography
   config.js                      # ignored local browser configuration
   dist/                          # ignored generated deployment output
@@ -113,11 +118,27 @@ The expected input is 367 location records. The owner confirmed successful uploa
 
 **QGIS:** The owner reported the connection worked after correcting misuse of the Service field. The chat distinguished a PostgreSQL service-file name from Aiven's full URI. Checking 367 features, EPSG:3071, and placement against a basemap was suggested, but completion of those visual/count checks was not reported.
 
+### PFAS Sites: direct retrieval and repeatable updates
+
+`notebooks/database import pfas sites open.ipynb` reads [DNR MapServer layer 1](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/1), identified in saved October output as **PFAS Sites (Open/Under Investigation)**. This is a distinct layer from the Surface Water and Fish Tissue sampling locations, not a measurement table or a join to it.
+
+The notebook uses Requests with 30-second timeouts for metadata, count, and a single GeoJSON feature request (`where=1=1`, all attributes, geometry, `outSR=4326`). It calls `raise_for_status()` and inspects returned JSON, then creates a GeoPandas GeoDataFrame labeled EPSG:4326. The service request performs the coordinate conversion; assigning the GeoDataFrame CRS does not. The source `WTM_X`/`WTM_Y` attributes are not converted by this request.
+
+Saved outputs show a 2,000-record response limit, a source count of 81, 81 returned features, 12 GeoDataFrame columns, a successful SRID-4326 point adaptation test, and a database count `(81,)`. The owner subsequently reported uploading the layer in Backend. These establish a historical snapshot, not a fresh database/source count or proof of spatial placement. The upload cell has no saved error. There is no pagination, automated count-equality assertion, ArcGIS JSON-error check, or durable raw-response archive; printed records in notebook outputs are not a reproducible ingestion/archive policy.
+
+The owner deliberately reduced the upload to geometry, `OBJECTID`, and `SITENAME`. `sql/create/pfas_sites.sql` defines `pfas_sites` with `geom geometry(Point, 4326) NOT NULL`, integer `objectid PRIMARY KEY`, and required `sitename` (the unquoted uppercase SQL identifier folds to lowercase). The import explicitly targets `public.pfas_sites`.
+
+The notebook prompts for URI/CA path at runtime and uses the same Psycopg binary/`verify-ca` connection workaround as the earlier importer. It fetches the PostGIS geometry type with `TypeInfo.fetch` and calls `register_shapely` on that connection before passing Shapely Points in parameterized tuples. `ST_SetSRID(..., 4326)` assigns SRID to already requested longitude/latitude coordinates; it does not reproject them.
+
+The insert now uses `ON CONFLICT (objectid) DO UPDATE` for geometry and name, with commit/rollback handling. New IDs are inserted; matching IDs update; IDs missing from a later source download remain. Thus the table can retain formerly open sites after the source changes. No deletion/status-refresh policy or stable cross-export ID guarantee is established. Adding fields requires updating the live table schema, selected columns/tuple order, insert placeholders, and conflict assignments; editing CREATE TABLE alone does not alter the live table. The notebook has no explicit connection-close step. Its saved count cell precedes insertion in source order and was rerun after upload according to the chat, rather than being a dedicated final verification cell.
+
 ### Working backend and deployment
 
 **Confirmed in code:** Django project `_crud` registers GeoDjango, Django REST Framework, REST Framework GIS, and `api`. `SamplingLocation` maps the existing `sampling_locations` table with `managed = False`, source `objectid` as primary key, `geom` as `PointField(srid=3071)`, and station name. Django does not manage creation or deletion of this table through model migrations.
 
 `SamplingLocationViewSet` is read-only and orders records by `objectid`. The router exposes `/api/locations/` and `/api/locations/<objectid>/`. GeoJSON output uses EPSG:4326 while stored geometry remains EPSG:3071. The frontend loads this API; custom filtering, pagination, and a measurement endpoint remain absent.
+
+The new unmanaged `PFASsites` model maps `pfas_sites`; its serializer reads EPSG:4326 `geom` directly and exposes `objectid`/`sitename`. `PFASsitesViewSet` orders by ID and exposes `/api/PFASsites/` plus detail routes. Its list has the same 60-second response-cache decorators as sampling locations; detail actions are not decorated. There is no transformation annotation or relationship to `SamplingLocation`. The suggested lowercase URL and explicit imports were not adopted: mixed-case `PFASsites` and wildcard imports remain in source. See [BACKEND_SETUP.md](BACKEND_SETUP.md).
 
 **October 11 performance change:** At `4a6527e`, `javascript` now uses `annotate(geom_4326=Transform("geom", 4326))` in the viewset and `GeometryField(source="geom_4326", read_only=True)` in the serializer. The owner implemented and deployed this after timing the old serializer. This supersedes the October 6 deferral and uses the same approach previously preserved on `main`/`react`. Stored EPSG:3071 geometry is unchanged; `geom_4326` is a query result annotation, not a new database column.
 
@@ -137,7 +158,9 @@ Settings read local `.env` values through django-environ and use the PostGIS bac
 
 Render Free is the recorded backend tier; Aiven remains the database host. The public API URL was supplied in the frontend chat and is linked above. Dashboard configuration, current service state, and billing were not inspected during this update. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for configuration, commands, and repeatable smoke checks.
 
-**Frontend implementation:** CDN MapLibre 5.14.0 renders MapTiler's `dataviz-v4-dark` style and location circles. CSS Grid provides a 240px sidebar and flexible map/data regions, with shared dark panel styles and typography. There is no narrow-screen breakpoint. Ignored local `config.js` supplies browser configuration; the Node build generates a separate `dist/config.js` from hosting variables. Neither configuration may contain server secrets. UI/table/chart library choices, measurement schema/import, and coordinated interactions remain unresolved.
+**Frontend implementation:** CDN MapLibre 5.14.0 starts with MapTiler's `dataviz-v4-dark`; Light and Warm use `dataviz-v4-light`. `theme.js` updates the root `data-theme` and fully replaces the map style with `diff:false`. `map.js` restores both overlays on `style.load`; their add functions read current CSS colors. The sidebar's later listeners reapply checkbox state. Rows are authored in HTML, with IDs matching map layer IDs, rather than dynamically generated from a registry. Both CSS previews share fill variables with the map but have no borders. Warm lacks PFAS-specific overrides, so those values fall back to the dark/root palette. Theme and visibility choices are not saved across reloads.
+
+CSS Grid still provides a 240px sidebar and flexible map/data regions; there is no narrow-screen breakpoint or layout selector. The build/configuration workflow is unchanged: ignored local `config.js`, generated `dist/config.js`, no npm project on this branch. UI/table/chart choices, measurement schema/import, and feature-level interactions remain unresolved.
 
 ## Data, sources, and interpretation
 
@@ -161,7 +184,8 @@ Historical source references below are retained for continuity; availability, sc
 |---|---|
 | [Wisconsin DNR PFAS viewer](https://dnrmaps.wi.gov/H5/?viewer=WI_PFAS) | Owner-selected product reference. |
 | [DNR PFAS MapServer](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer) | Historical source inventory. |
-| [Surface water/fish tissue layer 10](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/10) | Source of the current CSV workflows; no live service ingestion is implemented. |
+| [Surface water/fish tissue layer 10](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/10) | Source of the CSV workflows; no direct notebook retrieval for this layer. |
+| [PFAS Sites (Open/Under Investigation), layer 1](https://dnrmaps.wi.gov/arcgis2/rest/services/EM_PFAS/EM_PFAS_MAPLAYERS_PUBLIC_EXT/MapServer/1) | Direct notebook retrieval and selected-field upsert implemented; 81 sites in saved October output. No scheduled refresh. |
 | [Municipal sampling](https://dnrmaps.wi.gov/arcgis2/rest/services/DG_Groundwater_Retrieval_Network/DG_Municipal_System_PFAS_Sampling_Ext/MapServer/0) | Historically explored categorical summaries. |
 | [Private-well study](https://services5.arcgis.com/Ul9AyFFeFTjf08DW/arcgis/rest/services/Private_Well_PFAS_Shallow_Groundwater_Study_Results/FeatureServer) | Historical alternative chemistry source; no tracked import. Preserve generalized location precision if used. |
 | [Drinking Water System Portal](https://apps.dnr.wi.gov/dwsportalpub/), [EPA UCMR](https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule), [Water Quality Portal](https://www.waterqualitydata.us/webservices_documentation/) | Historical candidates, not implemented integrations. |
@@ -169,6 +193,8 @@ Historical source references below are retained for continuity; availability, sc
 USGS hydrography remains an owner-proposed context layer; no specific dataset/version is chosen.
 
 ## Laptop environment and connection workflow
+
+The new PFAS-sites workflow imports Requests, GeoPandas, Shapely adaptation through Psycopg, and supporting Python packages in the `wi-pfas` notebook kernel. Saved executions demonstrate their use during October work; this update did not recheck installed versions. The unchanged backend container manifest does not define this notebook environment, and no complete notebook manifest/lockfile was added.
 
 **Checked locally on 2026-09-18:** The Miniforge environment `wi-pfas` has Python 3.12.14, pandas 3.0.5, NumPy 2.5.3, ipykernel 7.3.0, Psycopg 3.3.4, psycopg-binary 3.3.4, and Django 6.1 according to its interpreter/package metadata. Both notebooks name the `wi-pfas` kernel. These are observed versions, not a committed dependency specification.
 
@@ -190,6 +216,8 @@ For later work:
 
 ## Verification and remaining work
 
+**November 6 review:** Compared `d65dbdb..1f0794f`, read the new notebook's source and selected saved outputs without executing it, and reviewed recent project chats. Documentation-only changes; no live requests, environment inspection, database operations, deployment, or application edits. Current source is stronger evidence than unfinished chat instructions; runtime/browser and newest-deployment validation remain unperformed here.
+
 **October 14 review:** Inspected the clean working tree, recent backend commits, current viewset/serializer/connection settings, and the performance conversation. Updated documentation only; no live API/database request, environment-secret read, build, migration, deployment, or application edit was performed. Local timings and deployment completion are owner-reported.
 
 **October 11 review:** Inspected current source and local branch differences, and reviewed the related frontend/branching/backend chat history. Updated documentation only. No environment imports, builds, notebook runs, live requests, database operations, or deployments were used as verification. See [CHAT_SYNTHESIS.md](CHAT_SYNTHESIS.md) for coverage limits. Documentation whitespace and local-link checks are the validation for this update.
@@ -202,7 +230,7 @@ Remaining limitations:
 
 - The cleanup still hardcodes four split columns, uses three undocumented source-text substitutions, and coerces distinct nonnumeric cases to missing numeric values without extracting the less-than limit.
 - Measurement row identity, foreign-key design, units/media/qualifier handling, and preservation of source links need decisions before analytical-result loading.
-- The database load has no repeat-import policy, post-import verification cell, or reusable command-line import script. DDL is manual SQL, not a migration system.
+- The sampling-location load still has no repeat-import policy. The PFAS-sites import now upserts selected fields but retains missing-source rows, lacks pagination/raw-response archival, and has no dedicated final verification cell. Neither is a reusable command-line importer. DDL is manual SQL, not a migration system.
 - The export path is still absolute. The processed CSV includes an unnamed index column; decide whether that belongs in the eventual import contract.
 - Exact source export date, filters, QGIS recipe, data dictionary, a complete notebook environment manifest, and implemented automated tests remain absent.
 - The tracked SQLite artifact is unused by the PostGIS settings and remains a cleanup item. Real `.env` values, personal SQLTools settings, and certificates must remain outside Git.
@@ -210,10 +238,11 @@ Remaining limitations:
 
 ## Next milestones for owner selection
 
-1. Verify the deployed collection cache with HTTP 200/data checks, repeated JSON timings within its 60-second lifetime, and a request after expiry. Record hosted results separately from local timings; connection reuse and response caching are now implemented. The labeled sidebar input remains the next frontend exercise when the owner returns to it; no new scaffold is needed.
+1. Finish reviewing the layer-symbol exercise: both previews exist, but outlines are absent. Check their appearance across all themes and verify hidden layers remain hidden after theme changes. Resolve Warm's PFAS palette deliberately; search remains deferred by the owner.
 2. Design the analytical measurement table and its relationship to `sampling_locations.objectid`, including identity, units, qualifiers, missing-result semantics, and import rerun behavior.
 3. Implement and validate measurement loading in manageable steps while preserving original text and provenance.
 4. Record independent QGIS placement/SRID verification; the reported API checks do not establish spatial correctness or scientific validity.
 5. Improve notebook portability, repeat-import handling, dependency locking, and meaningful automated checks as their scope becomes clear.
+6. Verify PFAS-sites API count/detail/coordinates against the imported snapshot and record hosted deployment results. Check each collection's hosted cache-hit/expiry cycle separately; previous millisecond figures concern local sampling-location requests only.
 
-Open questions include source interpretation/provenance, cross-machine notebook setup, spatial validation, measurement schema, table/chart choices, map/list selection and filtering, loading/error feedback, narrow-screen layout, and whether/when to resume React. Query-time PostGIS transformation is now implemented on JavaScript and its performance improvement is owner-reported. Remaining warm-request latency and first-visit Render wake-up behavior need separate treatment. No live deployed commit, independent timings, or MapTiler account restrictions were verified in this documentation review.
+Open questions include source interpretation/provenance, PFAS-site refresh/removal policy and future fields, notebook environment reproducibility, spatial validation, measurement schema, table/chart choices, search/selection, loading/error feedback, layout presets/mobile support, theme persistence, and whether/when to resume React. Query-time transformation, connection reuse, and both list caches are implemented. No live deployed commit, independent timings, or MapTiler account restrictions were verified here.

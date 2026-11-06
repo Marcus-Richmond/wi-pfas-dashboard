@@ -1,16 +1,20 @@
 # Backend setup and deployment
 
-Recorded 2026-09-20; updated 2026-10-14 from `javascript` at `d1f3106` and the backend performance conversation. Earlier October 11 reviews used `4a6527e` and `05b645d`, with `main`/`react` recorded at `4810393`. The owner reported working hosted API checks and later JavaScript location display. Public API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This update did not rebuild the image, inspect Render, or contact the database/API.
+Recorded 2026-09-20; updated 2026-11-06 from `javascript` at `1f0794f`, compared with documentation commit `d65dbdb`. The new PFAS-sites API was added at `d3bc7c4`; earlier performance evidence remains dated October 11–14. The owner reported the site upload and completed API source edits. Public sampling API: [location collection](https://wi-pfas-api.onrender.com/api/locations/). This review did not build, inspect Render, or contact either API/database; new-route deployment and count/detail checks are not confirmed in the reviewed chat.
 
 ## Architecture and dependency source
 
 The request path is browser/client → Render Gunicorn → Django/GeoDjango/DRF → Aiven PostgreSQL/PostGIS. WhiteNoise serves the browsable API's collected static assets.
 
 - Project: `backend/_crud`; application: `backend/api`.
-- Existing table: `sampling_locations`, mapped by an unmanaged Django model. Django model migrations do not create/delete this table.
-- Endpoints: `/api/locations/` and `/api/locations/<objectid>/`, read-only and ordered by source `objectid` for the collection.
-- Database geometry: EPSG:3071. GeoJSON output geometry: EPSG:4326. Serialization does not update stored coordinates.
-- Both frontend versions load the location API. No analytical-measurement API, custom filtering, or custom pagination is implemented.
+- Existing tables: `sampling_locations` and `pfas_sites`, each mapped by an unmanaged Django model. Model migrations do not create/delete these tables.
+- Read-only collection/detail routes: `/api/locations/`, `/api/locations/<objectid>/`, `/api/PFASsites/`, and `/api/PFASsites/<objectid>/`. Both collections order by `objectid`; preserve the mixed-case PFAS route.
+- Sampling geometry is stored in EPSG:3071 and transformed for output. PFAS-site geometry is stored in EPSG:4326 and serialized directly. Both output EPSG:4326 without modifying storage.
+- Both frontend versions load sampling locations; the active JavaScript version also loads PFAS sites. No analytical-measurement API, custom filtering, or custom pagination is implemented.
+
+`PFASsites`, `PFASsitesSerializer`, and `PFASsitesViewSet` map the three-column table defined in `sql/create/pfas_sites.sql`: `objectid`, `geom`, and `sitename`. Unlike the sampling serializer, the site serializer needs no `geom_4326` annotation. It exposes only the selected ID/name/geometry, not the source's status, media, links, or analytical results. There is no relationship between these two models.
+
+The new list action copies the existing 60-second `cache_page` and Accept/Cookie/Authorization/Origin variation pattern. Detail actions remain undecorated. Connection settings and the default per-process memory cache are unchanged. Wildcard imports and the mixed-case route remain in source; explicit imports and lowercase naming were suggestions, not completed changes. Do not document the suggested `/api/pfas-sites/` as the actual URL.
 
 On `javascript` at `4a6527e`, the viewset annotates `geom_4326=Transform("geom", 4326)` and the serializer uses `GeometryField(source="geom_4326", read_only=True)`. This supersedes the October 6 deferral and matches the approach previously preserved on `main`/`react`. The calculated geometry exists on returned objects, not as a stored second column. Shell tests or other callers of this serializer must use the annotated query. The response geometry field remains `geometry` in GeoJSON; the annotation is an internal implementation detail.
 
@@ -19,6 +23,8 @@ On `javascript` at `4a6527e`, the viewset annotates `geom_4326=Transform("geom",
 ## Performance measurements and next experiment
 
 The following results from the October 11–14 performance conversation were reported by the owner, not independently rerun. They describe 367 point features and different measurement conditions; do not combine them into a precise end-to-end speedup ratio.
+
+These measurements concern sampling locations, not the new PFAS-sites endpoint. The November review found no newer hosted cache-hit/expiry timings in Backend. Verify each collection independently; do not transfer the older timings or expected feature count to PFAS sites.
 
 | Test | First run | Second run | Scope |
 |---|---:|---:|---|
@@ -56,7 +62,7 @@ The Render exercise uses `DB_CONN_MAX_AGE=60`; leaving it unset retains local de
 
 ### Implemented collection-response cache
 
-`backend/api/views.py` imports `method_decorator`, `cache_page`, and `vary_on_headers`. The list action wraps its inherited implementation in this order:
+`backend/api/views.py` imports `method_decorator`, `cache_page`, and `vary_on_headers`. Both viewsets' list actions wrap their inherited implementation in this order:
 
 ```python
 @method_decorator(cache_page(60))
@@ -65,7 +71,7 @@ def list(self, request, *args, **kwargs):
     return super().list(request, *args, **kwargs)
 ```
 
-The outer cache wrapper stores successful GET/HEAD collection responses. The inner wrapper varies them by requested format, cookie/authentication context, and origin; URLs/query strings also distinguish cache entries. Keep this decorator order. Only `list()` is decorated: `/api/locations/<objectid>/` is not covered by this response cache. The viewset still supplies the transformed geometry annotation. [DRF caching guidance](https://www.django-rest-framework.org/api-guide/caching/)
+The outer cache wrapper stores successful GET/HEAD collection responses. The inner wrapper varies them by requested format, cookie/authentication context, and origin; URLs/query strings also distinguish cache entries. Keep this decorator order. Only `list()` is decorated: neither collection's detail route is covered by this response cache. The sampling-location viewset supplies the transformed geometry annotation; PFAS sites use stored geometry directly. [DRF caching guidance](https://www.django-rest-framework.org/api-guide/caching/)
 
 No custom `CACHES` setting or external cache service was added. Django therefore uses its default local-memory cache, which is shared by threads within one process but not between processes. It is cleared on process restart/redeployment and does not survive Render shutdown. A cache miss still performs the underlying query/serialization work. Expiry is 60 seconds from population, not a rolling lifetime extended by each hit. No explicit invalidation on data changes exists, so a populated variant can show older data until it expires. This is an intentional bounded freshness tradeoff, not a second authoritative copy of the dataset. [Django caching](https://docs.djangoproject.com/en/6.1/topics/cache/)
 
@@ -179,6 +185,8 @@ python manage.py runserver
 
 Open `http://127.0.0.1:8000/api/locations/` in your **web browser**. Check HTTP 200 and the GeoJSON collection, then use an actual returned `objectid` at `/api/locations/<objectid>/`. Press **Ctrl+C in Miniforge Prompt** to stop the server. These requests read the hosted Aiven database.
 
+For the new layer, use `http://127.0.0.1:8000/api/PFASsites/?format=json` and a known returned ID at `/api/PFASsites/<objectid>/?format=json`. Compare count, site names, and longitude/latitude geometry with the imported snapshot; saved October count was 81, not a permanent expectation. These checks were suggested in Backend but their results were not reported. An existing cached collection can lag data updates by up to its remaining lifetime; neither recreating tables nor rerunning an import is a smoke check.
+
 To check spatial-library loading, use the same **Miniforge Prompt**, `wi-pfas` environment, and `backend` working directory:
 
 ```bat
@@ -247,6 +255,6 @@ Copy the output directly into the appropriate private configuration. Never put t
 
 After deployment, append `/api/locations/` to the service URL shown by Render. Verify HTTP 200/data, normal browsable styling, and a known-record detail request. The owner confirmed all three checks. A new change still needs its own relevant validation; no automated API test suite is implemented.
 
-Do not rerun location imports or table-creation SQL as a deployment check. They affect the populated Aiven database, and the import has no duplicate-handling policy. No measurement import is implemented. The separately deployed frontend uses the same API; current dashboard branch/commit and auto-deploy settings still require checking when diagnosing a new deployment.
+Do not rerun imports or table-creation SQL as a deployment check. They affect the populated Aiven database. The sampling-location import has no duplicate handling; the new PFAS-site upsert changes existing geometry/name and retains absent-source rows. No measurement import is implemented. The separately deployed frontend uses both APIs; current dashboard branch/commit and auto-deploy settings still require checking when diagnosing a new deployment.
 
 Provider references used during setup: [Render Docker](https://render.com/docs/docker), [root-relative paths](https://render.com/docs/monorepo-support#root-relative-settings), [environment variables and secret files](https://render.com/docs/configure-environment-variables#secret-files), [Free tier](https://render.com/docs/free), and [micromamba image activation](https://micromamba-docker.readthedocs.io/en/latest/quick_start.html). Consult current provider documentation before relying on plan limits or changing deployment behavior.
